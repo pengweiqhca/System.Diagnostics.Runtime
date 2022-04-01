@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyOriginatorKeyFile>..\Key.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>True</SignAssembly>
     <TargetFrameworks>net6.0;netcoreapp3.1;net471</TargetFrameworks>
   </PropertyGroup>
 

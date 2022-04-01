@@ -1,14 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <AssemblyOriginatorKeyFile>..\Key.snk</AssemblyOriginatorKeyFile>
+    <Authors>Wei Peng</Authors>
+    <Copyright>Copyright © 2022</Copyright>
+    <DebugSymbols>true</DebugSymbols>
+    <Description>
+    </Description>
+    <IncludeSymbols>True</IncludeSymbols>
     <PackageId>PW.Diagnostics.Runtime</PackageId>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>opentelemetry metrics prometheus counter guage</PackageTags>
+    <RepositoryUrl>https://github.com/pengweiqhca/System.Diagnostics.Runtime</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <TargetFrameworks>net6.0;netcoreapp3.1;net471</TargetFrameworks>
-    <Version>1.0.0-preview1</Version>
+    <SignAssembly>True</SignAssembly>
+    <Version>1.0.0-preview3</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>System.Diagnostics.Runtime.Tests</_Parameter1>
+      <_Parameter1>System.Diagnostics.Runtime.Tests, PublicKey=002400000480000094000000060200000024000052534131000400000100010031b198cb1742fb12c699a60d820e6582ca8a8dbbd9383812f82bed299e06eab18931798fb14cc6ab80cda818032d15704f0e1c4aa5641b428f8a0decbfa1a30ab8d92efc7ec9cbd801f60c4b88b91c6acb704c20c6a061a7dae86601981164fb27be0c0beb3e6d5dbec1b83962a6d0b845ca09a52723237bd7083359b17830c0</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
 
@@ -19,6 +31,7 @@
 
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
     <PackageReference Include="IsExternalInit" Version="1.*" PrivateAssets="All" />
+    <!--<PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="2.0.76" />-->
 
     <Reference Include="System.Net.Http" />
   </ItemGroup>

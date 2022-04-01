@@ -1,9 +1,5 @@
 ﻿﻿# Metrics exposed
 
-Default include all metrics.
-
-## `EnabledAssemblies`
-
 | Category | Name                | Type    | Unit                                                  | Description                                            | Labels | net471 | netcoreapp3.1 | net6.0 |
 | -----| ---------------------------------------- | --------- | ---------------------------------------------------------------------------------------------- | --------------- | --------------- | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- |
 | assembly   | `assembly.count`    | `Gauge` |      | Number of Assemblies Loaded |        | ✅ | ✅ | ✅ |
@@ -31,7 +27,7 @@ Default include all metrics.
 | jit        | `jit.il.bytes.total` | Counter | B | IL Bytes Jitted | |  |  | ✅ |
 | jit        | `git.method.total` | Counter | | Number of Methods Jitted | |  |  | ✅ |
 | jit        | `jit.time.total` | Counter | ms | Time spent in JIT | |  |  | ✅ |
-|            | `process.cpu.time` | Counter | s | Processor time of this process | state | ✅ | ✅ | ✅ |
+| process | `process.cpu.time` | Counter | s | Processor time of this process | state | ✅ | ✅ | ✅ |
 | process    | `process.cpu.count` | Gauge | | The number of available logical CPUs | | ✅ | ✅ | ✅ |
 | process    | `process.memory.usage` | Gauge | B | The amount of physical memory in use | | ✅ | ✅ | ✅ |
 | process    | `process.memory.virtual` | Gauge | B | The amount of committed virtual memory | | ✅ | ✅ | ✅ |
@@ -48,8 +44,8 @@ Default include all metrics.
 | threading  | `threadpool.timer.count` | Gauge | | Number of active timers | |  | ✅ | ✅ |
 | threading  | `threadpool.adjustments.total` | Counter | | The total number of changes made to the size of the thread pool, labeled by the reason for change | adjustment_reason |  | ☑️ | ☑️ |
 | threading  | `threadpool.io.thread.count` | Gauge | | The number of active threads in the IO thread pool | |  | ☑️ | ☑️ |
-|            | `threadpool.thread.count` | Gauge | | The number of active threads | | ✅ |  |  |
-|            | `threadpool.io.thread.count` | Gauge | | The number of active IO threads | | ✅ |  |  |
-|            | `threadpool.queue.length` | Gauge | | ThreadPool queue length | | ☑️ |  |  |
-|            | `threadpool.completed.items.total` | Counter | | ThreadPool completed work item count | | ☑️ |  |  |
+| threading | `threadpool.thread.count` | Gauge | | The number of active threads | | ✅ |  |  |
+| threading | `threadpool.io.thread.count` | Gauge | | The number of active IO threads | | ✅ |  |  |
+| threading | `threadpool.queue.length` | Gauge | | ThreadPool queue length | | ☑️ |  |  |
+| threading | `threadpool.completed.items.total` | Counter | | ThreadPool completed work item count | | ☑️ |  |  |
 

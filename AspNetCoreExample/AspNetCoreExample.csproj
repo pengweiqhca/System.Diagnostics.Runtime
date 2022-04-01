@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="*-*" />
+    <PackageReference Include="OpenTelemetry.Exporter.Prometheus" Version="*-*" />
+    <PackageReference Include="prometheus-net.AspNetCore" Version="5.*" />
+    <PackageReference Include="prometheus-net.DotNetRuntime" Version="4.*" />
+
+    <ProjectReference Include="..\System.Diagnostics.Runtime\System.Diagnostics.Runtime.csproj" />
+  </ItemGroup>
+
+</Project>

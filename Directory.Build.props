@@ -1,0 +1,24 @@
+﻿<Project>
+
+  <PropertyGroup>
+    <AssemblyTitle>$(MSBuildProjectName) ($(TargetFramework))</AssemblyTitle>
+    <Authors>Wei Peng</Authors>
+    <Copyright>Copyright © 2022</Copyright>
+    <DebugSymbols>true</DebugSymbols>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <GeneratePackageOnBuild Condition="'$(Configuration)' == 'Release'">True</GeneratePackageOnBuild>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IncludeSymbols>True</IncludeSymbols>
+    <LangVersion>10.0</LangVersion>
+    <NoWarn>1591</NoWarn>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="5.*" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.*" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.*" PrivateAssets="All" />
+  </ItemGroup>
+
+</Project>

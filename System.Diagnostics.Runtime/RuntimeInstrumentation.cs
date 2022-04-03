@@ -489,7 +489,7 @@ public class RuntimeInstrumentation : IDisposable
         };
 
         meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.completed.items.total", () => completedItems, description: "ThreadPool completed work item count");
-        meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.queue.length", () => total, description: "ThreadPool queue length");
+        meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.queue.length", () => Math.Min(0, total), description: "ThreadPool queue length");
 #endif
     }
 

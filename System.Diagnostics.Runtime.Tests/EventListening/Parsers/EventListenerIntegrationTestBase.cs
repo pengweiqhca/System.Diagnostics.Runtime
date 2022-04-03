@@ -15,21 +15,17 @@ public abstract class EventListenerIntegrationTestBase<TEventListener>
     public void SetUp()
     {
         Parser = CreateListener();
+
         _eventListener = new DotNetEventListener(Parser, EventLevel.LogAlways, new());
-
-        var now = DateTime.Now;
-
-        // wait for event listener thread to spin up
-        while (!_eventListener.StartedReceivingEvents)
-        {
-            Thread.Sleep(10);
-
-            if (DateTime.Now.Subtract(now).TotalSeconds > 10) throw new TimeoutException();
-        }
     }
 
     [TearDown]
-    public void TearDown() => _eventListener.Dispose();
+    public void TearDown()
+    {
+        _eventListener.Dispose();
+
+        Assert.True(_eventListener.StartedReceivingEvents);
+    }
 
     protected abstract TEventListener CreateListener();
 }

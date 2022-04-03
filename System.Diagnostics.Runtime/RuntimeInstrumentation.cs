@@ -476,21 +476,20 @@ public class RuntimeInstrumentation : IDisposable
 
         meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.thread.count", ThreadCount, description: "The number of active threads");
 
-        if (threadPoolSchedulingInfo.Enabled)
+        if (!threadPoolSchedulingInfo.Enabled) return;
+
+        var completedItems = 0L;
+        var total = 0L;
+
+        threadPoolSchedulingInfo.Events.Enqueue += () => Interlocked.Increment(ref total);
+        threadPoolSchedulingInfo.Events.Dequeue += () =>
         {
-            var completedItems = 0L;
+            Interlocked.Increment(ref completedItems);
+            if (Interlocked.Read(ref total) > 0) Interlocked.Decrement(ref total);
+        };
 
-            threadPoolSchedulingInfo.Events.Completed += () => Interlocked.Increment(ref completedItems);
-
-            meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.completed.items.total", () => completedItems, description: "ThreadPool completed work item count");
-
-            var total = 0L;
-
-            threadPoolSchedulingInfo.Events.Enqueue += () => Interlocked.Increment(ref total);
-            threadPoolSchedulingInfo.Events.Dequeue += _ => Interlocked.Decrement(ref total);
-
-            meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.queue.length", () => total, description: "ThreadPool queue length");
-        }
+        meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.completed.items.total", () => completedItems, description: "ThreadPool completed work item count");
+        meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.queue.length", () => total, description: "ThreadPool queue length");
 #endif
     }
 

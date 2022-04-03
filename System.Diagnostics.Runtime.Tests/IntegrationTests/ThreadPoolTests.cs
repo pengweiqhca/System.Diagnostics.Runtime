@@ -92,13 +92,24 @@ internal class Given_Runtime_Counters_And_ThreadPool_Info_Events_Are_Enabled_For
         var numTasksToSchedule = (int)(Environment.ProcessorCount / sleepDelay.TotalSeconds) * desiredSecondsToBlock;
 
         return InstrumentTest.Assert(() => Enumerable.Range(1, numTasksToSchedule)
+            .Select(_ => Task.Run(() => Thread.Sleep(sleepDelay)))
+            .ToArray(), measurements =>
+            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}threadpool.queue.length"), Is.GreaterThanOrEqualTo(numTasksToSchedule).After(desiredSecondsToBlock * 1000, 10)),
+            $"{Options.MetricPrefix}threadpool.queue.length");
+    }
+
+    [Test]
+    public Task When_blocking_work_is_executed_on_the_thread_pool_then_thread_pool_delays_are_measured2()
+    {
+        var sleepDelay = TimeSpan.FromMilliseconds(250);
+        var desiredSecondsToBlock = 5;
+        var numTasksToSchedule = (int)(Environment.ProcessorCount / sleepDelay.TotalSeconds) * desiredSecondsToBlock;
+
+        return InstrumentTest.Assert(() => Enumerable.Range(1, numTasksToSchedule)
                 .Select(_ => Task.Run(() => Thread.Sleep(sleepDelay)))
                 .ToArray(), measurements =>
-            {
-                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}threadpool.thread.count"), Is.GreaterThan(Environment.ProcessorCount).After(desiredSecondsToBlock * 1000, 10));
-                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}threadpool.queue.length"), Is.GreaterThan(0).After(desiredSecondsToBlock * 1000, 10));
-            }, $"{Options.MetricPrefix}threadpool.thread.count",
-            $"{Options.MetricPrefix}threadpool.queue.length");
+                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}threadpool.thread.count"), Is.GreaterThan(Environment.ProcessorCount).After(desiredSecondsToBlock * 1000, 10)),
+            $"{Options.MetricPrefix}threadpool.thread.count");
     }
 #else
     [Test]

@@ -8,19 +8,8 @@ public class ThreadPoolSchedulingParser : IEventParser<ThreadPoolSchedulingParse
 {
     private const int EventIdThreadPoolWork = 30, EventIdThreadPoolDequeueWork = 31;
 
-    private readonly EventPairTimer<long> _eventPairTimer;
-
     public event Action? Enqueue;
-    public event Action<Events.DequeueEvent>? Dequeue;
-    public event Action? Completed;
-
-    public ThreadPoolSchedulingParser()
-    {
-        _eventPairTimer = new EventPairTimer<long>(
-            EventIdThreadPoolWork,
-            EventIdThreadPoolDequeueWork,
-            x => (long)x.Payload![0]!);
-    }
+    public event Action? Dequeue;
 
     public string EventSourceName => FrameworkEventSource.Name;
     public EventKeywords Keywords => (EventKeywords)(FrameworkEventSource.Keywords.ThreadPool);
@@ -28,18 +17,15 @@ public class ThreadPoolSchedulingParser : IEventParser<ThreadPoolSchedulingParse
 #endif
     public void ProcessEvent(EventWrittenEventArgs e)
     {
-        switch (_eventPairTimer.TryGetDuration(e, out var duration))
+        switch (e.EventId)
         {
-            case DurationResult.Start:
+            case EventIdThreadPoolWork:
                 Enqueue?.Invoke();
-                return;
-
-            case DurationResult.FinalWithDuration when duration > TimeSpan.Zero:
-                Dequeue?.Invoke(new Events.DequeueEvent(duration));
-                return;
+                break;
+            case EventIdThreadPoolDequeueWork:
+                Dequeue?.Invoke();
+                break;
         }
-
-        if (e.EventId == EventIdThreadPoolDequeueWork) Completed?.Invoke();
     }
 
     public static class Events
@@ -47,10 +33,7 @@ public class ThreadPoolSchedulingParser : IEventParser<ThreadPoolSchedulingParse
         public interface Verbose : IVerboseEvents
         {
             event Action Enqueue;
-            event Action<DequeueEvent> Dequeue;
-            event Action Completed;
+            event Action Dequeue;
         }
-
-        public record struct DequeueEvent(TimeSpan EnqueueDuration);
     }
 }

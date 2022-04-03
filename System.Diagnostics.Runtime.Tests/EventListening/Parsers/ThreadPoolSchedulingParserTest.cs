@@ -9,17 +9,14 @@ public class ThreadPoolSchedulingParserTest : EventListenerIntegrationTestBase<T
     [Test]
     public void TestEvent()
     {
-        var resetEvent = new AutoResetEvent(false);
-        Parser.Dequeue += e =>
-        {
-            resetEvent.Set();
-            Assert.That(e.EnqueueDuration, Is.GreaterThan(TimeSpan.Zero));
-        };
+        var countdown = new CountdownEvent(10);
+
+        Parser.Dequeue += () => countdown.Signal();
 
         for (var index = 0; index < 10; index++)
-            ThreadPool.QueueUserWorkItem(_ => Thread.Sleep(1000));
+            ThreadPool.QueueUserWorkItem(_ => Thread.Sleep(10));
 
-        Assert.IsTrue(resetEvent.WaitOne(TimeSpan.FromSeconds(2)));
+        Assert.IsTrue(countdown.Wait(TimeSpan.FromSeconds(20)));
     }
 
     protected override ThreadPoolSchedulingParser CreateListener() => new();

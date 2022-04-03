@@ -6,7 +6,7 @@ namespace System.Diagnostics.Runtime.Tests.IntegrationTests;
 internal class Given_Only_Runtime_Counters_Are_Enabled_For_ThreadPoolStats : IntegrationTestBase
 {
     protected override RuntimeMetricsOptions GetOptions() => new() { ThreadingEnabled = true };
-#if NETFRAMEWORK
+
     [Test]
     public Task When_IO_work_is_executed_on_the_thread_pool_then_the_number_of_io_threads_is_measured()
     {
@@ -23,10 +23,24 @@ internal class Given_Only_Runtime_Counters_Are_Enabled_For_ThreadPoolStats : Int
 
                 await Task.WhenAll(httpTasks).ConfigureAwait(false);
             }, measurements =>
-                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}threadpool.io.thread.count"), Is.GreaterThanOrEqualTo(1).After(2000, 10)),
-            $"{Options.MetricPrefix}threadpool.io.thread.count");
+                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}threadpool.active.io.thread.count"), Is.GreaterThanOrEqualTo(1).After(2000, 10)),
+            $"{Options.MetricPrefix}threadpool.active.io.thread.count");
     }
-#else
+
+    [Test]
+    public Task When_blocking_work_is_executed_on_the_thread_pool()
+    {
+        var sleepDelay = TimeSpan.FromMilliseconds(250);
+        var desiredSecondsToBlock = 5;
+        var numTasksToSchedule = (int)(Environment.ProcessorCount / sleepDelay.TotalSeconds) * desiredSecondsToBlock;
+
+        return InstrumentTest.Assert(() => Enumerable.Range(1, numTasksToSchedule)
+                .Select(_ => Task.Run(() => Thread.Sleep(sleepDelay)))
+                .ToArray(), measurements =>
+                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}threadpool.active.worker.thread.count"), Is.GreaterThan(Environment.ProcessorCount).After(desiredSecondsToBlock * 1000, 10)),
+            $"{Options.MetricPrefix}threadpool.active.worker.thread.count");
+    }
+#if NETCOREAPP
     [Test]
     public Task When_work_is_executed_on_the_thread_pool_then_executed_work_is_measured()
     {
@@ -96,20 +110,6 @@ internal class Given_Runtime_Counters_And_ThreadPool_Info_Events_Are_Enabled_For
             .ToArray(), measurements =>
             Assert.That(() => measurements.Sum($"{Options.MetricPrefix}threadpool.queue.length"), Is.GreaterThanOrEqualTo(numTasksToSchedule).After(desiredSecondsToBlock * 1000, 10)),
             $"{Options.MetricPrefix}threadpool.queue.length");
-    }
-
-    [Test]
-    public Task When_blocking_work_is_executed_on_the_thread_pool_then_thread_pool_delays_are_measured2()
-    {
-        var sleepDelay = TimeSpan.FromMilliseconds(250);
-        var desiredSecondsToBlock = 5;
-        var numTasksToSchedule = (int)(Environment.ProcessorCount / sleepDelay.TotalSeconds) * desiredSecondsToBlock;
-
-        return InstrumentTest.Assert(() => Enumerable.Range(1, numTasksToSchedule)
-                .Select(_ => Task.Run(() => Thread.Sleep(sleepDelay)))
-                .ToArray(), measurements =>
-                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}threadpool.thread.count"), Is.GreaterThan(Environment.ProcessorCount).After(desiredSecondsToBlock * 1000, 10)),
-            $"{Options.MetricPrefix}threadpool.thread.count");
     }
 #else
     [Test]

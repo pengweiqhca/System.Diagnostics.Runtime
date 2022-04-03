@@ -452,6 +452,22 @@ public class RuntimeInstrumentation : IDisposable
             }
         }
 #else
+        if (threadPoolSchedulingInfo.Enabled)
+        {
+            var completedItems = 0L;
+            var total = 0L;
+
+            threadPoolSchedulingInfo.Events.Enqueue += () => Interlocked.Increment(ref total);
+            threadPoolSchedulingInfo.Events.Dequeue += () =>
+            {
+                Interlocked.Increment(ref completedItems);
+                if (Interlocked.Read(ref total) > 0) Interlocked.Decrement(ref total);
+            };
+
+            meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.completed.items.total", () => completedItems, description: "ThreadPool completed work item count");
+            meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.queue.length", () => Math.Max(0, total), description: "ThreadPool queue length");
+        }
+#endif
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             static long IoThreadCount()
@@ -462,7 +478,7 @@ public class RuntimeInstrumentation : IDisposable
                 return t4 - t2;
             }
 
-            meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.io.thread.count", IoThreadCount,
+            meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.active.io.thread.count", IoThreadCount,
                 description: "The number of active IO threads");
         }
 
@@ -474,23 +490,7 @@ public class RuntimeInstrumentation : IDisposable
             return t3 - t1 + t4 - t2;
         }
 
-        meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.thread.count", ThreadCount, description: "The number of active threads");
-
-        if (!threadPoolSchedulingInfo.Enabled) return;
-
-        var completedItems = 0L;
-        var total = 0L;
-
-        threadPoolSchedulingInfo.Events.Enqueue += () => Interlocked.Increment(ref total);
-        threadPoolSchedulingInfo.Events.Dequeue += () =>
-        {
-            Interlocked.Increment(ref completedItems);
-            if (Interlocked.Read(ref total) > 0) Interlocked.Decrement(ref total);
-        };
-
-        meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.completed.items.total", () => completedItems, description: "ThreadPool completed work item count");
-        meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.queue.length", () => Math.Min(0, total), description: "ThreadPool queue length");
-#endif
+        meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.active.worker.thread.count", ThreadCount, description: "The number of active worker threads");
     }
 
     public void Dispose()

@@ -26,8 +26,7 @@ public class ContentionEventParser : IEventParser<ContentionEventParser>, Conten
 
     public EventKeywords Keywords => (EventKeywords)NativeRuntimeEventSource.Keywords.Contention;
     public string EventSourceName => NativeRuntimeEventSource.Name;
-#if NETFRAMEWORK
-#endif
+
     public void ProcessEvent(EventWrittenEventArgs e)
     {
         if (_eventPairTimer.TryGetDuration(e, out var duration) == DurationResult.FinalWithDuration && duration > TimeSpan.Zero)

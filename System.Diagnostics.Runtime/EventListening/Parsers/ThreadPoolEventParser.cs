@@ -18,8 +18,7 @@ public class ThreadPoolEventParser : IEventParser<ThreadPoolEventParser>, Thread
 
     public string EventSourceName => NativeRuntimeEventSource.Name;
     public EventKeywords Keywords => (EventKeywords) NativeRuntimeEventSource.Keywords.Threading;
-#if NETFRAMEWORK
-#endif
+
     public void ProcessEvent(EventWrittenEventArgs e)
     {
         switch (e.EventId)

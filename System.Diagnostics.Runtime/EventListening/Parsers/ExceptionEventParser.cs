@@ -11,8 +11,7 @@ public class ExceptionEventParser : IEventParser<ExceptionEventParser>, Exceptio
 
     public string EventSourceName => NativeRuntimeEventSource.Name;
     public EventKeywords Keywords => (EventKeywords)NativeRuntimeEventSource.Keywords.Exception;
-#if NETFRAMEWORK
-#endif
+
     public void ProcessEvent(EventWrittenEventArgs e)
     {
         if (e.EventId == EventIdExceptionThrown)

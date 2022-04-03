@@ -160,7 +160,8 @@ internal class Given_Gc_Info_Events_Are_Available_For_GcStats : IntegrationTestB
 
             GC.Collect(0);
         }, measurements => Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.finalization.queue.length"),
-            Is.GreaterThan(0).After(200, 10)), $"{Options.MetricPrefix}gc.finalization.queue.length");
+            Is.GreaterThan(0).After(200, 10)),
+            $"{Options.MetricPrefix}gc.finalization.queue.length");
 
     [Test]
     public Task When_a_garbage_collection_is_performed_then_the_collection_and_pause_stats_and_reasons_are_updated() =>
@@ -179,7 +180,7 @@ internal class Given_Gc_Info_Events_Are_Available_For_GcStats : IntegrationTestB
             $"{Options.MetricPrefix}gc.collection.total",
             $"{Options.MetricPrefix}gc.pause.time");
 
-    public class FinalizableTest
+    private class FinalizableTest
     {
         ~FinalizableTest()
         {

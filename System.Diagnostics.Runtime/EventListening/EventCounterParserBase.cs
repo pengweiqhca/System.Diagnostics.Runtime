@@ -45,8 +45,7 @@ public abstract class EventCounterParserBase<T> : IEventCounterParser<T>
     public abstract string EventSourceName { get; }
     public virtual EventKeywords Keywords => EventKeywords.All;
     public virtual int RefreshIntervalSeconds { get; set; } = 1;
-#if NETFRAMEWORK
-#endif
+
     public void ProcessEvent(EventWrittenEventArgs e)
     {
         if (e.EventName is not "EventCounters" ||

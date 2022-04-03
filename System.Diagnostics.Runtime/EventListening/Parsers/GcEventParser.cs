@@ -33,8 +33,7 @@ public class GcEventParser : IEventParser<GcEventParser>, GcEventParser.Events.I
 
     public string EventSourceName => NativeRuntimeEventSource.Name;
     public EventKeywords Keywords => (EventKeywords)NativeRuntimeEventSource.Keywords.GC;
-#if NETFRAMEWORK
-#endif
+
     public void ProcessEvent(EventWrittenEventArgs e)
     {
         if (e.EventId == EventIdAllocTick) return;

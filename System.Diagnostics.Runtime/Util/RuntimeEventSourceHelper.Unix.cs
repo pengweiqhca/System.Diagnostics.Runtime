@@ -25,23 +25,20 @@ internal static class ProcessTimes
 
         var cpuUsage = 0;
 
-        if (Interop.Kernel32.GetProcessTimes(Interop.Kernel32.GetCurrentProcess(), out _, out _, out var procKernelTime, out var procUserTime) &&
-            Interop.Kernel32.GetSystemTimes(out _, out var systemUserTime, out var systemKernelTime))
-        {
-            var totalProcTime = procUserTime - _prevProcUserTime + (procKernelTime - _prevProcKernelTime);
-            var totalSystemTime = systemUserTime - _prevSystemUserTime + (systemKernelTime - _prevSystemKernelTime);
+        if (!Interop.Kernel32.GetProcessTimes(Interop.Kernel32.GetCurrentProcess(), out _, out _, out var procKernelTime, out var procUserTime) ||
+            !Interop.Kernel32.GetSystemTimes(out _, out var systemUserTime, out var systemKernelTime)) return cpuUsage;
 
-            if (_prevSystemUserTime != 0 && _prevSystemKernelTime != 0 && // These may be 0 when we report CPU usage for the first time, in which case we should just return 0.
-                totalSystemTime != 0)
-            {
-                cpuUsage = (int)(totalProcTime * 100 / totalSystemTime);
-            }
+        var totalProcTime = procUserTime - _prevProcUserTime + (procKernelTime - _prevProcKernelTime);
+        var totalSystemTime = systemUserTime - _prevSystemUserTime + (systemKernelTime - _prevSystemKernelTime);
 
-            _prevProcUserTime = procUserTime;
-            _prevProcKernelTime = procKernelTime;
-            _prevSystemUserTime = systemUserTime;
-            _prevSystemKernelTime = systemKernelTime;
-        }
+        // These may be 0 when we report CPU usage for the first time, in which case we should just return 0.
+        if (_prevSystemUserTime != 0 && _prevSystemKernelTime != 0 && totalSystemTime != 0)
+            cpuUsage = (int)(totalProcTime * 100 / totalSystemTime);
+
+        _prevProcUserTime = procUserTime;
+        _prevProcKernelTime = procKernelTime;
+        _prevSystemUserTime = systemUserTime;
+        _prevSystemKernelTime = systemKernelTime;
 
         return cpuUsage;
     }

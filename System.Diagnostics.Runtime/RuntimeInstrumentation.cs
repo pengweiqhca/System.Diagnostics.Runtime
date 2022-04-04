@@ -5,6 +5,7 @@ using System.Diagnostics.Runtime.EventListening.Sources;
 using System.Diagnostics.Runtime.Util;
 using System.Diagnostics.Tracing;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace System.Diagnostics.Runtime;
@@ -26,7 +27,7 @@ public class RuntimeInstrumentation : IDisposable
 #endif
     private static readonly AssemblyName AssemblyName = typeof(RuntimeInstrumentation).Assembly.GetName();
     public static string InstrumentationName { get; } = AssemblyName.Name ?? "System.Diagnostics.Runtime";
-    public static readonly string? InstrumentationVersion = AssemblyName.Version?.ToString();
+    private static readonly string? InstrumentationVersion = AssemblyName.Version?.ToString();
     private readonly IEnumerable<IDisposable> _disposables;
 
     public RuntimeInstrumentation(RuntimeMetricsOptions options)
@@ -155,6 +156,9 @@ public class RuntimeInstrumentation : IDisposable
         _disposables = disposables;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static KeyValuePair<string, object?> CreateTag(string key, object? value) => new(key, value);
+
     private static void AssembliesInstrumentation(Meter meter, RuntimeMetricsOptions options) =>
         meter.CreateObservableGauge($"{options.MetricPrefix}assembly.count", () => AppDomain.CurrentDomain.GetAssemblies().Length, description: "Number of Assemblies Loaded");
 #if NETCOREAPP
@@ -203,7 +207,7 @@ public class RuntimeInstrumentation : IDisposable
                 null,
                 "Count of exceptions thrown, broken down by type");
 
-            exceptionError.Events.ExceptionThrown += e => exceptionCount.Add(1, new KeyValuePair<string, object?>(LabelType, e.ExceptionType));
+            exceptionError.Events.ExceptionThrown += e => exceptionCount.Add(1, CreateTag(LabelType, e.ExceptionType));
         }
         else if (runtimeCounters.Enabled)
         {
@@ -247,8 +251,8 @@ public class RuntimeInstrumentation : IDisposable
                 "The amount of time spent running garbage collections");
 
             gcInfo.Events.CollectionComplete += e => gcCollectionSeconds.Record(e.Duration.TotalMilliseconds,
-                new KeyValuePair<string, object?>(LabelGeneration, GetGenerationToString(e.Generation)),
-                new KeyValuePair<string, object?>(LabelGcType, GcTypeToLabels[e.Type]));
+                CreateTag(LabelGeneration, GetGenerationToString(e.Generation)),
+                CreateTag(LabelGcType, GcTypeToLabels[e.Type]));
 
             var gcPauseSeconds = meter.CreateHistogram<double>(
                 $"{options.MetricPrefix}gc.pause.time", "ms",
@@ -261,8 +265,8 @@ public class RuntimeInstrumentation : IDisposable
                 "Counts the number of garbage collections that have occurred, broken down by generation number and the reason for the collection.");
 
             gcInfo.Events.CollectionStart += e => gcCollections.Add(1,
-                new KeyValuePair<string, object?>(LabelGeneration, GetGenerationToString(e.Generation)),
-                new KeyValuePair<string, object?>(LabelReason, GcReasonToLabels[e.Reason]));
+                CreateTag(LabelGeneration, GetGenerationToString(e.Generation)),
+                CreateTag(LabelReason, GcReasonToLabels[e.Reason]));
 
             GcEventParser.Events.HeapStatsEvent stats = default;
             gcInfo.Events.HeapStats += e => stats = e;
@@ -271,12 +275,12 @@ public class RuntimeInstrumentation : IDisposable
                 ? Array.Empty<Measurement<double>>()
                 : new[]
                 {
-                    new Measurement<double>(stats.Gen0SizeBytes, new KeyValuePair<string, object?>(LabelGeneration, "0")),
-                    new Measurement<double>(stats.Gen1SizeBytes, new KeyValuePair<string, object?>(LabelGeneration, "1")),
-                    new Measurement<double>(stats.Gen2SizeBytes, new KeyValuePair<string, object?>(LabelGeneration, "2")),
-                    new Measurement<double>(stats.LohSizeBytes, new KeyValuePair<string, object?>(LabelGeneration, "loh"))
+                    new Measurement<double>(stats.Gen0SizeBytes, CreateTag(LabelGeneration, "0")),
+                    new Measurement<double>(stats.Gen1SizeBytes, CreateTag(LabelGeneration, "1")),
+                    new Measurement<double>(stats.Gen2SizeBytes, CreateTag(LabelGeneration, "2")),
+                    new Measurement<double>(stats.LohSizeBytes, CreateTag(LabelGeneration, "loh"))
 #if NET6_0_OR_GREATER
-                    , new Measurement<double>(stats.PohSizeBytes, new KeyValuePair<string, object?>(LabelGeneration, "poh"))
+                    , new Measurement<double>(stats.PohSizeBytes, CreateTag(LabelGeneration, "poh"))
 #endif
                 }, "B", "The current size of all heaps (only updated after a garbage collection)");
 
@@ -296,9 +300,9 @@ public class RuntimeInstrumentation : IDisposable
         {
             meter.CreateObservableCounter($"{options.MetricPrefix}gc.collection.total", () => new[]
             {
-                new Measurement<long>(GC.CollectionCount(0), new KeyValuePair<string, object?>(LabelGeneration, "0")),
-                new Measurement<long>(GC.CollectionCount(1), new KeyValuePair<string, object?>(LabelGeneration, "1")),
-                new Measurement<long>(GC.CollectionCount(2), new KeyValuePair<string, object?>(LabelGeneration, "2"))
+                new Measurement<long>(GC.CollectionCount(0), CreateTag(LabelGeneration, "0")),
+                new Measurement<long>(GC.CollectionCount(1), CreateTag(LabelGeneration, "1")),
+                new Measurement<long>(GC.CollectionCount(2), CreateTag(LabelGeneration, "2"))
             }, description: "Counts the number of garbage collections that have occurred");
 #if NETCOREAPP
             if (runtimeCounters.Enabled)
@@ -309,12 +313,12 @@ public class RuntimeInstrumentation : IDisposable
                     () => heapSize.Gen0SizeBytes > 0
                         ? new[]
                         {
-                            new Measurement<double>(heapSize.Gen0SizeBytes, new KeyValuePair<string, object?>(LabelGeneration, "0")),
-                            new Measurement<double>(heapSize.Gen1SizeBytes, new KeyValuePair<string, object?>(LabelGeneration, "1")),
-                            new Measurement<double>(heapSize.Gen2SizeBytes, new KeyValuePair<string, object?>(LabelGeneration, "2")),
-                            new Measurement<double>(heapSize.LohSizeBytes, new KeyValuePair<string, object?>(LabelGeneration, "loh"))
+                            new Measurement<double>(heapSize.Gen0SizeBytes, CreateTag(LabelGeneration, "0")),
+                            new Measurement<double>(heapSize.Gen1SizeBytes, CreateTag(LabelGeneration, "1")),
+                            new Measurement<double>(heapSize.Gen2SizeBytes, CreateTag(LabelGeneration, "2")),
+                            new Measurement<double>(heapSize.LohSizeBytes, CreateTag(LabelGeneration, "loh"))
 #if NET6_0_OR_GREATER
-                            , new Measurement<double>(heapSize.PohSizeBytes, new KeyValuePair<string, object?>(LabelGeneration, "poh"))
+                            , new Measurement<double>(heapSize.PohSizeBytes, CreateTag(LabelGeneration, "poh"))
 #endif
                         }
                         : Array.Empty<Measurement<double>>(),
@@ -330,16 +334,16 @@ public class RuntimeInstrumentation : IDisposable
 #endif
             }
             else if (typeof(GC).GetMethod("GetGenerationSize", BindingFlags.Static | BindingFlags.NonPublic)?
-                    .CreateDelegate(typeof(Func<int, ulong>)) is Func<int, ulong> func)
+                         .CreateDelegate(typeof(Func<int, ulong>)) is Func<int, ulong> func)
                 meter.CreateObservableGauge($"{options.MetricPrefix}gc.heap.size",
                     () => new[]
                     {
-                        new Measurement<double>(func(0), new KeyValuePair<string, object?>(LabelGeneration, "0")),
-                        new Measurement<double>(func(1), new KeyValuePair<string, object?>(LabelGeneration, "1")),
-                        new Measurement<double>(func(2), new KeyValuePair<string, object?>(LabelGeneration, "2")),
-                        new Measurement<double>(func(3), new KeyValuePair<string, object?>(LabelGeneration, "loh"))
+                        new Measurement<double>(func(0), CreateTag(LabelGeneration, "0")),
+                        new Measurement<double>(func(1), CreateTag(LabelGeneration, "1")),
+                        new Measurement<double>(func(2), CreateTag(LabelGeneration, "2")),
+                        new Measurement<double>(func(3), CreateTag(LabelGeneration, "loh"))
 #if NET6_0_OR_GREATER
-                            , new Measurement<double>(func(4), new KeyValuePair<string, object?>(LabelGeneration, "poh"))
+                        , new Measurement<double>(func(4), CreateTag(LabelGeneration, "poh"))
 #endif
                     },
                     "B", "The current size of all heaps (only updated after a garbage collection)");
@@ -438,8 +442,8 @@ public class RuntimeInstrumentation : IDisposable
 
         return new[]
         {
-            new Measurement<double>(process.UserProcessorTime.TotalSeconds, new KeyValuePair<string, object?>("state", "user")),
-            new Measurement<double>(process.PrivilegedProcessorTime.TotalSeconds, new KeyValuePair<string, object?>("state", "system"))
+            new Measurement<double>(process.UserProcessorTime.TotalSeconds, CreateTag("state", "user")),
+            new Measurement<double>(process.PrivilegedProcessorTime.TotalSeconds, CreateTag("state", "system"))
         };
     }
 #if NET6_0_OR_GREATER
@@ -491,7 +495,7 @@ public class RuntimeInstrumentation : IDisposable
                 "The total number of changes made to the size of the thread pool, labeled by the reason for change");
 
             threadPoolInfo.Events.ThreadPoolAdjusted += e =>
-                adjustmentsTotal.Add(1, new KeyValuePair<string, object?>("adjustment_reason", AdjustmentReasonToLabel[e.AdjustmentReason]));
+                adjustmentsTotal.Add(1, CreateTag("adjustment_reason", AdjustmentReasonToLabel[e.AdjustmentReason]));
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {

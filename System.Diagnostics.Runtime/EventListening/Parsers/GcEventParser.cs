@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics.Runtime.EventListening.Sources;
 using System.Diagnostics.Runtime.Util;
 using System.Diagnostics.Tracing;
-using System.Runtime.CompilerServices;
 
 namespace System.Diagnostics.Runtime.EventListening.Parsers;
 

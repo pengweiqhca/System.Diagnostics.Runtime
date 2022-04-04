@@ -22,13 +22,8 @@ public static class MeterProviderBuilderExtensions
 
         var options = new RuntimeMetricsOptions();
 
-        if (configure == null)
-        {
-            options.EnabledSystemRuntime = true;
-            options.EnabledNativeRuntime = true;
-        }
-        else
-            configure.Invoke(options);
+        if (configure == null) options.EnabledNativeRuntime = true;
+        else configure.Invoke(options);
 
         builder.AddMeter(RuntimeInstrumentation.InstrumentationName);
 

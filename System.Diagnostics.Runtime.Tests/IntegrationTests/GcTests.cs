@@ -28,6 +28,39 @@ internal class Given_Are_Available_For_GcStats : IntegrationTestBase
     public Task Computer_memory_available() =>
         InstrumentTest.Assert(measurements => Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.memory.total.available"),
             Is.GreaterThan(0.0).After(2000, 10)), $"{Options.MetricPrefix}gc.memory.total.available");
+
+    [Test]
+    public Task When_a_garbage_collection_is_performed_then_the_pause_ratios_can_be_calculated() =>
+        InstrumentTest.Assert(() =>
+        {
+            // arrange
+            for (var i = 0; i < 5; i++)
+                GC.Collect(2, GCCollectionMode.Forced, true, true);
+        }, measurements => Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.pause.ratio"),
+            Is.GreaterThan(0.0).After(2000, 10)), $"{Options.MetricPrefix}gc.pause.ratio");
+
+    [Test]
+    public Task When_a_garbage_collection_is_performed_then_the_heap_sizes_are_updated() =>
+        InstrumentTest.Assert(measurements =>
+        {
+            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc_generation", "0"),
+                Is.GreaterThan(0).After(2000, 10));
+            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc_generation", "1"),
+                Is.GreaterThan(0).After(2000, 10));
+            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc_generation", "2"),
+                Is.GreaterThan(0).After(2000, 10));
+            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc_generation", "loh"),
+                Is.GreaterThan(0).After(2000, 10));
+#if NET6_0_OR_GREATER
+            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc_generation", "poh"),
+                Is.GreaterThan(0).After(2000, 10));
+#endif
+        }, $"{Options.MetricPrefix}gc.heap.size");
+#else
+    [Test]
+    public Task When_a_garbage_collection_is_performed_then_the_heap_sizes_are_updated() =>
+        InstrumentTest.Assert(measurements => Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.heap.size"),
+            Is.GreaterThan(0.0).After(2000, 10)), $"{Options.MetricPrefix}gc.heap.size");
 #endif
     [Test]
     public Task When_collections_happen_then_the_collection_count_is_increased([Values(0, 1, 2)] int generation)
@@ -45,11 +78,6 @@ internal class Given_Are_Available_For_GcStats : IntegrationTestBase
                 Is.GreaterThanOrEqualTo(numCollectionsToRun).After(2_000, 10)),
             $"{Options.MetricPrefix}gc.collection.total");
     }
-
-    [Test]
-    public Task When_a_garbage_collection_is_performed_then_the_heap_sizes_are_updated() =>
-        InstrumentTest.Assert(measurements => Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.heap.size"),
-            Is.GreaterThan(0.0).After(2000, 10)), $"{Options.MetricPrefix}gc.heap.size");
 }
 #if NETCOREAPP
 internal class Given_Only_Counters_Are_Available_For_GcStats : IntegrationTestBase
@@ -68,6 +96,10 @@ internal class Given_Only_Counters_Are_Available_For_GcStats : IntegrationTestBa
                 Is.GreaterThan(0).After(2000, 10));
             Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc_generation", "loh"),
                 Is.GreaterThan(0).After(2000, 10));
+#if NET6_0_OR_GREATER
+            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc_generation", "poh"),
+                Is.GreaterThan(0).After(2000, 10));
+#endif
         }, $"{Options.MetricPrefix}gc.heap.size");
 
     [Test]
@@ -108,7 +140,11 @@ internal class Given_Gc_Info_Events_Are_Available_For_GcStats : IntegrationTestB
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc_generation", "2"),
                     Is.GreaterThan(0).After(200, 10));
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc_generation", "loh"),
-                    Is.GreaterThan(0).After(200, 10));
+                Is.GreaterThan(0).After(200, 10));
+#if NET6_0_OR_GREATER
+                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc_generation", "poh"),
+                    Is.GreaterThan(0).After(2000, 10));
+#endif
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.pinned.objects"),
                     Is.GreaterThan(0).After(200, 10));
             }, $"{Options.MetricPrefix}gc.heap.size",
@@ -143,24 +179,24 @@ internal class Given_Gc_Info_Events_Are_Available_For_GcStats : IntegrationTestB
     [Test]
     public Task When_a_garbage_collection_is_performed_then_the_finalization_queue_is_updated() =>
         InstrumentTest.Assert(() =>
-        {
-            // arrange
             {
-                var finalizable = new FinalizableTest();
-                finalizable = null;
-            }
-            {
-                var finalizable = new FinalizableTest();
-                finalizable = null;
-            }
-            {
-                var finalizable = new FinalizableTest();
-                finalizable = null;
-            }
+                // arrange
+                {
+                    var finalizable = new FinalizableTest();
+                    finalizable = null;
+                }
+                {
+                    var finalizable = new FinalizableTest();
+                    finalizable = null;
+                }
+                {
+                    var finalizable = new FinalizableTest();
+                    finalizable = null;
+                }
 
-            GC.Collect(0);
-        }, measurements => Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.finalization.queue.length"),
-            Is.GreaterThan(0).After(200, 10)),
+                GC.Collect(0);
+            }, measurements => Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.finalization.queue.length"),
+                Is.GreaterThan(0).After(200, 10)),
             $"{Options.MetricPrefix}gc.finalization.queue.length");
 
     [Test]

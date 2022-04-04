@@ -1,4 +1,4 @@
-﻿﻿# Metrics exposed
+﻿﻿﻿# Metrics exposed
 
 | Category | Name                                             | Type    | Unit                                                  | Description                                                                                                                      | Labels | net471 | netcoreapp3.1 | net6.0 |
 | -----|--------------------------------------------------| --------- | ---------------------------------------------------------------------------------------------- |----------------------------------------------------------------------------------------------------------------------------------| --------------- | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- |
@@ -17,12 +17,11 @@
 | gc         | `gc.collection.time`                             | Histogram | ms | The amount of time spent running garbage collections                                                                             | gc_generation gc_type |  | ☑️ | ☑️ |
 | gc         | `gc.pause.time`                                  | Histogram | ms | The amount of time execution was paused for garbage collection                                                                   | |  | ☑️ | ☑️ |
 | gc         | `gc.collection.total`                            | Counter |  | Counts the number of garbage collections that have occurred, broken down by generation number and the reason for the collection. | gc_generation gc_reason |  | ☑️ | ☑️ |
-| gc         | `gc.heap.size`                                   | Gauge | B | The current size of all heaps (only updated after a garbage collection)                                                          | gc_generation |  | ☑️ | ☑️ |
+| gc         | `gc.heap.size`                                   | Gauge | B | The current size of all heaps (only updated after a garbage collection)                                                          | gc_generation |  | ✅ | ✅ |
 | gc         | `gc.pinned.objects`                              | Gauge |  | The number of pinned objects                                                                                                     | |  | ☑️ | ☑️ |
 | gc         | `gc.finalization.queue.length`                   | Gauge |  | The number of objects waiting to be finalized                                                                                    | |  | ☑️ | ☑️ |
 | gc | `gc.collection.total`                            | Counter |  | Counts the number of garbage collections that have occurred                                                                      | gc_generation | ✅ | ✅ | ✅ |
-| gc | `gc.pause.ratio`                                 | Gauge | % | % Time in GC since last GC                                                                                                       | |  | 🗸 | 🗸 |
-| gc | `gc.heap.size`                                   | Gauge | B | The current size of all heaps (only updated after a garbage collection)                                                          | gc_generation |  | 🗸 | 🗸 |
+| gc | `gc.pause.ratio`                                 | Gauge | % | % Time in GC since last GC                                                                                                       | |  | ✅ | ✅ |
 | gc | `gc.heap.size`                                   | Gauge | B | The current size of all heaps                                                                                                    | | ✅ | ✅ | ✅ |
 | jit        | `jit.il.bytes.total`                             | Counter | B | IL Bytes Jitted                                                                                                                  | |  |  | ✅ |
 | jit        | `git.method.total`                               | Counter | | Number of Methods Jitted                                                                                                         | |  |  | ✅ |

@@ -14,7 +14,7 @@
     <RepositoryType>git</RepositoryType>
     <TargetFrameworks>net6.0;netcoreapp3.1;net471</TargetFrameworks>
     <SignAssembly>True</SignAssembly>
-    <Version>1.0.2</Version>
+    <Version>1.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

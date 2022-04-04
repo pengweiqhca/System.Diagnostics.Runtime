@@ -26,6 +26,15 @@ app.UseMetricServer("/prometheus");
 
 app.UseRouting();
 
+app.Use((context, next) =>
+{
+    if (context.Request.Path != "/") return next();
+
+    context.Response.Redirect("/metrics");
+
+    return Task.CompletedTask;
+});
+
 app.UseEndpoints(endpoints => endpoints.MapControllers());
 
 Prometheus.DotNetRuntime.DotNetRuntimeStatsBuilder.Default().StartCollecting();

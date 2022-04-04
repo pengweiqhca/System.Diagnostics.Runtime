@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.Runtime.EventListening.Sources;
 using System.Diagnostics.Runtime.Util;
 using System.Diagnostics.Tracing;
+using System.Runtime.CompilerServices;
 
 namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
@@ -96,19 +97,25 @@ public class GcEventParser : IEventParser<GcEventParser>, GcEventParser.Events.I
                 LohSizeBytes = (ulong)e.Payload![6]!;
                 FinalizationQueueLength = (ulong)e.Payload![9]!;
                 NumPinnedObjects = (uint)e.Payload![10]!;
+#if NET6_0_OR_GREATER
+                PohSizeBytes = (ulong)e.Payload![14]!;
+#endif
             }
 
-            public ulong FinalizationQueueLength { get; }
-
-            public ulong LohSizeBytes { get; }
-
-            public ulong Gen2SizeBytes { get; }
+            public ulong Gen0SizeBytes { get; }
 
             public ulong Gen1SizeBytes { get; }
 
-            public uint NumPinnedObjects { get; }
+            public ulong Gen2SizeBytes { get; }
 
-            public ulong Gen0SizeBytes { get; }
+            public ulong LohSizeBytes { get; }
+
+            public ulong FinalizationQueueLength { get; }
+
+            public uint NumPinnedObjects { get; }
+#if NET6_0_OR_GREATER
+            public ulong PohSizeBytes { get; }
+#endif
         }
 
         public record struct PauseCompleteEvent(TimeSpan PauseDuration);

@@ -276,6 +276,9 @@ public class RuntimeInstrumentation : IDisposable
                     new Measurement<long>((long)stats.Gen1SizeBytes, new KeyValuePair<string, object?>(LabelGeneration, "1")),
                     new Measurement<long>((long)stats.Gen2SizeBytes, new KeyValuePair<string, object?>(LabelGeneration, "2")),
                     new Measurement<long>((long)stats.LohSizeBytes, new KeyValuePair<string, object?>(LabelGeneration, "loh"))
+#if NET6_0_OR_GREATER
+                    , new Measurement<long>((long)stats.PohSizeBytes, new KeyValuePair<string, object?>(LabelGeneration, "poh"))
+#endif
                 }, "B", "The current size of all heaps (only updated after a garbage collection)");
 
             meter.CreateObservableGauge($"{options.MetricPrefix}gc.pinned.objects",
@@ -305,21 +308,34 @@ public class RuntimeInstrumentation : IDisposable
 
                 runtimeCounters.Events.TimeInGc += e => gcPause = e;
 
-                meter.CreateObservableGauge($"{options.MetricPrefix}gc.pause.ratio", () => gcPause.Mean, "%", "% Time in GC since last GC");
+                meter.CreateObservableGauge($"{options.MetricPrefix}gc.pause.ratio", () => gcPause == default
+                    ? Array.Empty<Measurement<double>>()
+                    : new[] { new Measurement<double>(gcPause.Mean) }, "%", "% Time in GC since last GC");
 
-                var gc = new ConcurrentDictionary<string, double>();
+                var heapSize = new HeapSize();
 
                 meter.CreateObservableGauge($"{options.MetricPrefix}gc.heap.size",
-                    () => gc.Select(kv => new Measurement<double>(kv.Value, new KeyValuePair<string, object?>(LabelGeneration, kv.Key))).ToArray(),
+                    () => heapSize.Gen0SizeBytes > 0
+                        ? new[]
+                        {
+                            new Measurement<long>(heapSize.Gen0SizeBytes, new KeyValuePair<string, object?>(LabelGeneration, "0")),
+                            new Measurement<long>(heapSize.Gen1SizeBytes, new KeyValuePair<string, object?>(LabelGeneration, "1")),
+                            new Measurement<long>(heapSize.Gen2SizeBytes, new KeyValuePair<string, object?>(LabelGeneration, "2")),
+                            new Measurement<long>(heapSize.LohSizeBytes, new KeyValuePair<string, object?>(LabelGeneration, "loh"))
+#if NET6_0_OR_GREATER
+                            , new Measurement<long>(heapSize.PohSizeBytes, new KeyValuePair<string, object?>(LabelGeneration, "poh"))
+#endif
+                        }
+                        : Array.Empty<Measurement<long>>(),
                     "B", "The current size of all heaps (only updated after a garbage collection)");
 
-                runtimeCounters.Events.Gen0Size += e => gc["0"] = e.Mean;
-                runtimeCounters.Events.Gen1Size += e => gc["1"] = e.Mean;
-                runtimeCounters.Events.Gen2Size += e => gc["2"] = e.Mean;
-                runtimeCounters.Events.LohSize += e => gc["loh"] = e.Mean;
+                runtimeCounters.Events.Gen0Size += e => heapSize.Gen0SizeBytes = (long)e.Mean;
+                runtimeCounters.Events.Gen1Size += e => heapSize.Gen1SizeBytes = (long)e.Mean;
+                runtimeCounters.Events.Gen2Size += e => heapSize.Gen2SizeBytes = (long)e.Mean;
+                runtimeCounters.Events.LohSize += e => heapSize.LohSizeBytes = (long)e.Mean;
 #if NET6_0_OR_GREATER
                 if (runtime5Counters.Enabled)
-                    runtime5Counters.Events.PohSize += e => gc["poh"] = e.Mean;
+                    runtime5Counters.Events.PohSize += e => heapSize.PohSizeBytes = (long)e.Mean;
 #endif
             }
             else
@@ -347,6 +363,17 @@ public class RuntimeInstrumentation : IDisposable
         var gcInfo = GC.GetGCMemoryInfo();
 
         return gcInfo.HeapSizeBytes == 0 ? 0 : gcInfo.FragmentedBytes * 100d / gcInfo.HeapSizeBytes;
+    }
+
+    private class HeapSize
+    {
+        public long Gen0SizeBytes { get; set; }
+        public long Gen1SizeBytes { get; set; }
+        public long Gen2SizeBytes { get; set; }
+        public long LohSizeBytes { get; set; }
+#if NET6_0_OR_GREATER
+        public long PohSizeBytes { get; set; }
+#endif
     }
 #endif
 #if NET6_0_OR_GREATER
@@ -464,7 +491,7 @@ public class RuntimeInstrumentation : IDisposable
                 if (Interlocked.Read(ref total) > 0) Interlocked.Decrement(ref total);
             };
 
-            meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.completed.items.total", () => completedItems, description: "ThreadPool completed work item count");
+            meter.CreateObservableCounter($"{options.MetricPrefix}threadpool.completed.items.total", () => completedItems, description: "ThreadPool completed work item count");
             meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.queue.length", () => Math.Max(0, total), description: "ThreadPool queue length");
         }
 #endif

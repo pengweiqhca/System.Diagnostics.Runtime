@@ -1,4 +1,4 @@
-# prometheus-net.DotNetMetrics
+# PW.Diagnostics.Runtime
 A plugin for the [System.Diagnostics.DiagnosticSource](https://www.nuget.org/packages/System.Diagnostics.DiagnosticSource) package, [exposing .NET runtime metrics](docs/metrics-exposed.md) including:
 - Garbage collection collection frequencies and timings by generation/ type, pause timings and GC CPU consumption ratio
 - Heap size by generation
@@ -28,5 +28,5 @@ See [example](https://github.com/pengweiqhca/System.Diagnostics.Runtime/blob/mai
 
 ![Grafana dashboard sample](docs/grafana-example.PNG)
 
-## Further reading 
+## Further reading
 - A partial list of core CLR events is available in the [ETW events documentation](https://docs.microsoft.com/en-us/dotnet/framework/performance/clr-etw-events).

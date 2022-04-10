@@ -137,7 +137,7 @@ public class EtlParser : IDisposable,
         if (_contentionTimer.TryStop(data.ThreadID, data.TimeStamp, out var duration) &&
             duration > TimeSpan.Zero &&
             ContentionEnd is { } func)
-            func(new(duration));
+            func(new(duration, (NativeRuntimeEventSource.ContentionFlags)data.ContentionFlags));
     }
 
     private void ExceptionStart(ExceptionTraceData data)

@@ -14,11 +14,13 @@ namespace System.Diagnostics.Runtime;
 public class RuntimeInstrumentation : IDisposable
 {
     private const string
+        ContentionFlags = "contention_flags",
         LabelType = "type",
         LabelReason = "gc_reason",
         LabelGcType = "gc_type",
         LabelGeneration = "gc_generation";
 
+    private static readonly Dictionary<NativeRuntimeEventSource.ContentionFlags, string> ContentionFlagsToLabel = LabelGenerator.MapEnumToLabelValues<NativeRuntimeEventSource.ContentionFlags>();
     private static readonly Dictionary<NativeRuntimeEventSource.ThreadAdjustmentReason, string> AdjustmentReasonToLabel = LabelGenerator.MapEnumToLabelValues<NativeRuntimeEventSource.ThreadAdjustmentReason>();
     private static readonly Dictionary<NativeRuntimeEventSource.GCType, string> GcTypeToLabels = LabelGenerator.MapEnumToLabelValues<NativeRuntimeEventSource.GCType>();
     private static readonly Dictionary<NativeRuntimeEventSource.GCReason, string> GcReasonToLabels = LabelGenerator.MapEnumToLabelValues<NativeRuntimeEventSource.GCReason>();
@@ -49,7 +51,7 @@ public class RuntimeInstrumentation : IDisposable
 
             try
             {
-                disposables!.Add(etlParser = new EtlParser(options.EtwSessionName!));
+                disposables.Add(etlParser = new EtlParser(options.EtwSessionName!));
             }
             catch (Exception ex)
             {
@@ -141,7 +143,7 @@ public class RuntimeInstrumentation : IDisposable
                 new EventConsumer<RuntimeEventParser.Events.CountersV5_0>(runtimeParser),
 #endif
                 new EventConsumer<RuntimeEventParser.Events.CountersV3_0>(runtimeParser),
-            new EventConsumer<GcEventParser.Events.Info>(parser));
+                new EventConsumer<GcEventParser.Events.Info>(parser));
 #else
             if (options.EnabledNativeRuntime) CreateEtlParser();
 
@@ -208,22 +210,21 @@ public class RuntimeInstrumentation : IDisposable
     private static void ContentionInstrumentation(Meter meter, RuntimeMetricsOptions options,
         IConsumes<ContentionEventParser.Events.Info> contentionInfo)
     {
-#if NETCOREAPP
-        meter.CreateObservableCounter($"{options.MetricPrefix}lock.contention.total", () => Monitor.LockContentionCount, description: "Monitor Lock Contention Count");
-#endif
-        if (!contentionInfo.Enabled) return;
-
-        var contentionSecondsTotal = meter.CreateCounter<double>($"{options.MetricPrefix}lock.contention.time.total", "s", "The total amount of time spent contending locks");
-#if NETFRAMEWORK
-        var contentionTotal = meter.CreateCounter<long>($"{options.MetricPrefix}lock.contention.total", description: "Monitor Lock Contention Count");
-        contentionInfo.Events.ContentionEnd += e =>
+        if (contentionInfo.Enabled)
         {
-            contentionSecondsTotal.Add(e.ContentionDuration.TotalSeconds);
+            var contentionTotal = meter.CreateCounter<long>($"{options.MetricPrefix}lock.contention.total", description: "Monitor Lock Contention Count");
+            var contentionSecondsTotal = meter.CreateCounter<double>($"{options.MetricPrefix}lock.contention.time.total", "s", "The total amount of time spent contending locks");
 
-            contentionTotal.Add(1);
-        };
-#else
-        contentionInfo.Events.ContentionEnd += e => contentionSecondsTotal.Add(e.ContentionDuration.TotalSeconds);
+            contentionInfo.Events.ContentionEnd += e =>
+            {
+                contentionSecondsTotal.Add(e.ContentionDuration.TotalSeconds, CreateTag(ContentionFlags, ContentionFlagsToLabel[e.ContentionFlags]));
+
+                contentionTotal.Add(1, CreateTag(ContentionFlags, ContentionFlagsToLabel[e.ContentionFlags]));
+            };
+        }
+#if NETCOREAPP
+        else
+            meter.CreateObservableCounter($"{options.MetricPrefix}lock.contention.total", () => Monitor.LockContentionCount, description: "Monitor Lock Contention Count");
 #endif
     }
 #if NET6_0_OR_GREATER

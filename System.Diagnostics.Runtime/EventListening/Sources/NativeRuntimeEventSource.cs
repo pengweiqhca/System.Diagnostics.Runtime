@@ -185,6 +185,12 @@ public class NativeRuntimeEventSource
         GCHeapSnapshot = GCHeapAndTypeNames | GCHeapCollect | GCHeapDump | Type | GC // 0x0000000001980001
     }
 
+    public enum ContentionFlags : byte
+    {
+        Managed,
+        Native,
+    }
+
     public enum GCReason : uint
     {
         AllocSmall,

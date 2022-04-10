@@ -28,8 +28,9 @@ public class ContentionEventParser : IEventParser<ContentionEventParser>, Conten
 
     public void ProcessEvent(EventWrittenEventArgs e)
     {
-        if (_eventPairTimer.TryGetDuration(e, out var duration) == DurationResult.FinalWithDuration && duration > TimeSpan.Zero)
-            ContentionEnd?.Invoke(new (duration, (NativeRuntimeEventSource.ContentionFlags)(byte)e.Payload![0]!));
+        if (_eventPairTimer.TryGetDuration(e, out var duration) == DurationResult.FinalWithDuration && duration > TimeSpan.Zero &&
+            (byte)e.Payload![0]! == 0)
+            ContentionEnd?.Invoke(new(duration));
     }
 
     public static class Events
@@ -39,6 +40,6 @@ public class ContentionEventParser : IEventParser<ContentionEventParser>, Conten
             event Action<ContentionEndEvent> ContentionEnd;
         }
 
-        public record struct ContentionEndEvent(TimeSpan ContentionDuration, NativeRuntimeEventSource.ContentionFlags ContentionFlags);
+        public record struct ContentionEndEvent(TimeSpan ContentionDuration);
     }
 }

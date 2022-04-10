@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿# Metrics exposed
+﻿﻿﻿﻿﻿﻿# Metrics exposed
 
 > ☑️ Need set `EnabledNativeRuntime = true`
 
@@ -6,8 +6,7 @@
 | -----|--------------------------------------------------| --------- | ---------------------------------------------------------------------------------------------- |----------------------------------------------------------------------------------------------------------------------------------| --------------- | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- |
 | assembly   | `assembly.count`                                 | `Gauge` |      | Number of Assemblies Loaded                                                                                                      |        | ✅ | ✅ | ✅ |
 | contention | `lock.contention.total`                          | Counter | | The number of locks contended                                                                                                    | |  | ✅ | ✅ |
-| contention | `lock.contention.total`                          | Counter | | The number of locks contended                                                                                                    | contention_flags | ☑️ | ☑️ | ☑️ |
-| contention | `lock.contention.time.total`                     | Counter | | The total amount of time spent contending locks                                                                                  | contention_flags | ☑️ | ☑️ | ☑️ |
+| contention | `lock.contention.time.total`                     | Counter | | The total amount of time spent contending locks                                                                                  |  | ☑️ | ☑️ | ☑️ |
 | dns        | `dns.requested.total`                            | Counter | | The total number of dns lookup requests                                                                                          | |  | | ✅ |
 | dns        | `dns.current.count`                              | Gauge | | The total number of current dns lookups                                                                                          | |  |  | ✅ |
 | dns        | `dns.duration.total`                             | Counter | ms | The sum of dns lookup durations                                                                                                  | |  |  | ✅ |

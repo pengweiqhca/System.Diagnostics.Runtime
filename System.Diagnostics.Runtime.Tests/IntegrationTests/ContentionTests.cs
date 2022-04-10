@@ -53,7 +53,7 @@ internal class Given_Contention_Events_Are_Enabled_For_Contention_Stats : Integr
                 const int numLocksContended = numThreads - 1;
 
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}lock.contention.total"),
-                    Is.GreaterThanOrEqualTo(numLocksContended / 2).After(5000, 1000));
+                    Is.GreaterThanOrEqualTo(numLocksContended / 2).After(60000, 1000));
 
                 // Pattern of expected contention times is: 50ms, 100ms, 150ms, etc.
                 var expectedDelay = TimeSpan.FromMilliseconds(Enumerable.Range(1, numLocksContended).Aggregate(sleepForMs, (acc, next) => acc + sleepForMs * next));
@@ -64,7 +64,7 @@ internal class Given_Contention_Events_Are_Enabled_For_Contention_Stats : Integr
             $"{Options.MetricPrefix}lock.contention.time.total");
     }
 }
-
+#if NETCOREAPP
 [TestFixture]
 internal class Given_Only_Counters_Are_Enabled_For_Contention_Stats : IntegrationTestBase
 {
@@ -106,3 +106,4 @@ internal class Given_Only_Counters_Are_Enabled_For_Contention_Stats : Integratio
         }, $"{Options.MetricPrefix}lock.contention.total");
     }
 }
+#endif

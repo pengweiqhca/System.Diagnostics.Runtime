@@ -125,19 +125,19 @@ public class EtlParser : IDisposable,
 
     private void ContentionStart(ContentionStartTraceData data)
     {
-        if (data.ProcessID != ProcessId) return;
+        if (data.ProcessID != ProcessId || data.ContentionFlags != ContentionFlags.Managed) return;
 
         _contentionTimer.Start(data.ThreadID, data.TimeStamp);
     }
 
     private void ContentionStop(ContentionStopTraceData data)
     {
-        if (data.ProcessID != ProcessId) return;
+        if (data.ProcessID != ProcessId || data.ContentionFlags != ContentionFlags.Managed) return;
 
         if (_contentionTimer.TryStop(data.ThreadID, data.TimeStamp, out var duration) &&
             duration > TimeSpan.Zero &&
             ContentionEnd is { } func)
-            func(new(duration, (NativeRuntimeEventSource.ContentionFlags)data.ContentionFlags));
+            func(new(duration));
     }
 
     private void ExceptionStart(ExceptionTraceData data)

@@ -27,6 +27,3 @@ See [example](https://github.com/pengweiqhca/System.Diagnostics.Runtime/blob/mai
 ### Grafana dashboard
 
 ![Grafana dashboard sample](docs/grafana-example.PNG)
-
-## Further reading
-- A partial list of core CLR events is available in the [ETW events documentation](https://docs.microsoft.com/en-us/dotnet/framework/performance/clr-etw-events).

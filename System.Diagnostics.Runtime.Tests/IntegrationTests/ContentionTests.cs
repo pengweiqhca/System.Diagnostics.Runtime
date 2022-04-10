@@ -66,7 +66,7 @@ internal class Given_Contention_Events_Are_Enabled_For_Contention_Stats : Integr
 }
 #if NETCOREAPP
 [TestFixture]
-internal class Given_Only_Counters_Are_Enabled_For_Contention_Stats : IntegrationTestBase
+internal class Given_System_Runtime_Are_Enabled_For_Contention_Stats : IntegrationTestBase
 {
     protected override RuntimeMetricsOptions GetOptions() => new() { ContentionEnabled = true };
 

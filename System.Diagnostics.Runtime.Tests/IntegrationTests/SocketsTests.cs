@@ -4,7 +4,7 @@ namespace System.Diagnostics.Runtime.Tests.IntegrationTests;
 
 #if NET6_0_OR_GREATER
 // TODO need to test incoming network activity
-public class SocketsTests : IntegrationTestBase
+public class Enabled_For_SocketsTests : IntegrationTestBase
 {
     protected override RuntimeMetricsOptions GetOptions() => new() { SocketsEnabled = true };
 

@@ -4,7 +4,7 @@ using NUnit.Framework;
 namespace System.Diagnostics.Runtime.Tests.IntegrationTests;
 
 #if NET6_0_OR_GREATER
-public class DnsTests : IntegrationTestBase
+public class Enabled_For_DnsTests : IntegrationTestBase
 {
     protected override RuntimeMetricsOptions GetOptions() => new() { DnsEnabled = true };
 

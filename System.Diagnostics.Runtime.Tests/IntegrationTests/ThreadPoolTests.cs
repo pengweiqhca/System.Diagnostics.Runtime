@@ -3,7 +3,7 @@ using NUnit.Framework;
 
 namespace System.Diagnostics.Runtime.Tests.IntegrationTests;
 
-internal class Given_Only_Runtime_Counters_Are_Enabled_For_ThreadPoolStats : IntegrationTestBase
+internal class Enabled_For_ThreadPoolStats : IntegrationTestBase
 {
     protected override RuntimeMetricsOptions GetOptions() => new() { ThreadingEnabled = true };
 
@@ -83,7 +83,7 @@ internal class Given_Only_Runtime_Counters_Are_Enabled_For_ThreadPoolStats : Int
 #endif
 }
 
-internal class Given_Runtime_Counters_And_ThreadPool_Info_Events_Are_Enabled_For_ThreadPoolStats : IntegrationTestBase
+internal class Given_Native_Runtime_Are_Enabled_For_ThreadPoolStats : IntegrationTestBase
 {
     protected override RuntimeMetricsOptions GetOptions() => new() { ThreadingEnabled = true, EnabledNativeRuntime = true };
 #if NETFRAMEWORK

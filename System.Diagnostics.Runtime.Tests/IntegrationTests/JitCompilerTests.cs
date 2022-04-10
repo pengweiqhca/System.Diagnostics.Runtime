@@ -2,7 +2,7 @@
 
 namespace System.Diagnostics.Runtime.Tests.IntegrationTests;
 #if NET6_0_OR_GREATER
-internal class Given_Only_Counters_Are_Enabled_For_JitStats : IntegrationTestBase
+internal class Enabled_For_JitStatsTest : IntegrationTestBase
 {
     protected override RuntimeMetricsOptions GetOptions() => new() { JitEnabled = true };
 

@@ -1,11 +1,12 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 
 namespace System.Diagnostics.Runtime.Util;
 
 /// <summary>
 /// A strongly-typed cache that periodically evicts items.
 /// </summary>
-public sealed class Cache<TKey, TValue> : IDisposable where TKey : notnull
+public sealed class Cache<TKey, TValue> : IDisposable where TKey : notnull where TValue : struct
 {
     private readonly ConcurrentDictionary<TKey, CacheValue<TValue>> _cache;
     private readonly TimeSpan _expireItemsAfter;
@@ -57,10 +58,9 @@ public sealed class Cache<TKey, TValue> : IDisposable where TKey : notnull
         return false;
     }
 
-    internal bool TryRemove(TKey key, out TValue? value, out DateTime timeStamp)
+    internal bool TryRemove(TKey key, out TValue value, out DateTime timeStamp)
     {
-        CacheValue<TValue> cacheValue;
-        if (_cache.TryRemove(key, out cacheValue))
+        if (_cache.TryRemove(key, out var cacheValue))
         {
             value = cacheValue.Value;
             timeStamp = cacheValue.TimeStamp;
@@ -72,7 +72,7 @@ public sealed class Cache<TKey, TValue> : IDisposable where TKey : notnull
         return false;
     }
 
-    internal struct CacheValue<T>
+    private struct CacheValue<T>
     {
         public CacheValue(T value, DateTime? timeStamp)
         {

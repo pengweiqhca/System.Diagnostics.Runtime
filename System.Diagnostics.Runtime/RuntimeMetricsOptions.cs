@@ -19,12 +19,12 @@
         /// Gets or sets a value indicating whether assembly metrics should be collected.
         /// </summary>
         public bool? AssembliesEnabled { get; set; }
-#if NETCOREAPP
+
         /// <summary>
         /// Gets or sets a value indicating whether contention metrics should be collected.
         /// </summary>
         public bool? ContentionEnabled { get; set; }
-
+#if NET6_0_OR_GREATER
         /// <summary>
         /// Gets or sets a value indicating whether dns metrics should be collected.
         /// </summary>
@@ -64,8 +64,8 @@
         public bool? ThreadingEnabled { get; set; }
 
         private bool IsAllEnabled => AssembliesEnabled == null
-#if NETCOREAPP
                                      && ContentionEnabled == null
+#if NET6_0_OR_GREATER
                                      && DnsEnabled == null
 #endif
                                      && ExceptionsEnabled == null
@@ -83,12 +83,13 @@
         /// Gets a value indicating whether assembly metrics is enabled.
         /// </summary>
         internal bool IsAssembliesEnabled => AssembliesEnabled == true || IsAllEnabled;
-#if NETCOREAPP
+
         /// <summary>
         /// Gets a value indicating whether contention metrics is enabled.
         /// </summary>
         internal bool IsContentionEnabled => ContentionEnabled == true || IsAllEnabled;
 
+#if NET6_0_OR_GREATER
         /// <summary>
         /// Gets a value indicating whether dns metrics is enabled.
         /// </summary>
@@ -140,6 +141,12 @@
         /// </summary>
         /// <remarks>If true, metrics will include more detail info.</remarks>
         public bool EnabledSystemRuntime { get; set; }
+#else
+        /// <summary>
+        /// Gets or sets the name of the session to open. Should be unique across the machine.
+        /// </summary>
+        /// <remarks>If EnabledNativeRuntime is true, EtwSessionName must have value.</remarks>
+        public string? EtwSessionName { get; set; }
 #endif
     }
 }

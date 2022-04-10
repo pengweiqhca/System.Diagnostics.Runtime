@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net471</TargetFramework>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../AspNetCoreExample/MeterProviderBuilderExtensions.cs" />
+    <Compile Include="../AspNetCoreExample/Simulate.cs" />
+
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="*-*" />
+    <PackageReference Include="OpenTelemetry.Exporter.Prometheus" Version="*-*" />
+
+    <ProjectReference Include="..\System.Diagnostics.Runtime\System.Diagnostics.Runtime.csproj" />
+  </ItemGroup>
+
+</Project>

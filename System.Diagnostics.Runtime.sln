@@ -24,6 +24,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{7B54D698-8
 		docs\grafana-example.PNG = docs\grafana-example.PNG
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetFrameworkExample", "NetFrameworkExample\NetFrameworkExample.csproj", "{9F0CA4B5-0E94-418B-A077-566E9F57B81D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,6 +44,10 @@ Global
 		{79CA51B5-F49F-4D16-93A4-A03B896AD4B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{79CA51B5-F49F-4D16-93A4-A03B896AD4B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{79CA51B5-F49F-4D16-93A4-A03B896AD4B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F0CA4B5-0E94-418B-A077-566E9F57B81D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F0CA4B5-0E94-418B-A077-566E9F57B81D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F0CA4B5-0E94-418B-A077-566E9F57B81D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F0CA4B5-0E94-418B-A077-566E9F57B81D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

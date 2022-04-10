@@ -5,8 +5,6 @@ namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
 public class ThreadPoolSchedulingParser : IEventParser<ThreadPoolSchedulingParser>, ThreadPoolSchedulingParser.Events.Verbose
 {
-    private const int EventIdThreadPoolWork = 30, EventIdThreadPoolDequeueWork = 31;
-
     public event Action? Enqueue;
     public event Action? Dequeue;
 
@@ -18,10 +16,10 @@ public class ThreadPoolSchedulingParser : IEventParser<ThreadPoolSchedulingParse
     {
         switch (e.EventId)
         {
-            case EventIdThreadPoolWork:
+            case FrameworkEventSource.EventId.ThreadPoolEnqueueWork:
                 Enqueue?.Invoke();
                 break;
-            case EventIdThreadPoolDequeueWork:
+            case FrameworkEventSource.EventId.ThreadPoolDequeueWork:
                 Dequeue?.Invoke();
                 break;
         }

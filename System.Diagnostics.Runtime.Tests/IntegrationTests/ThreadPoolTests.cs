@@ -111,9 +111,9 @@ internal class Given_Runtime_Counters_And_ThreadPool_Info_Events_Are_Enabled_For
             Assert.That(() => measurements.Sum($"{Options.MetricPrefix}threadpool.queue.length"), Is.GreaterThanOrEqualTo(numTasksToSchedule).After(desiredSecondsToBlock * 1000, 10)),
             $"{Options.MetricPrefix}threadpool.queue.length");
     }
-#else
+#endif
     [Test]
-    public Task When_work_is_executed_on_the_thread_pool_then_executed_work_is_measured() =>
+    public Task When_work_is_sleep_on_the_thread_pool_then_executed_work_is_measured() =>
         InstrumentTest.Assert(() =>
         {
             // schedule a bunch of blocking tasks that will make the thread pool will grow
@@ -142,8 +142,7 @@ internal class Given_Runtime_Counters_And_ThreadPool_Info_Events_Are_Enabled_For
 
                 await Task.WhenAll(httpTasks).ConfigureAwait(false);
             }, measurements =>
-                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}threadpool.io.thread.count"), Is.GreaterThanOrEqualTo(1).After(2000, 10)),
+                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}threadpool.io.thread.count"), Is.GreaterThanOrEqualTo(1).After(30000, 10)),
             $"{Options.MetricPrefix}threadpool.io.thread.count");
     }
-#endif
 }

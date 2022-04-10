@@ -6,23 +6,15 @@ namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
 public class GcEventParser : IEventParser<GcEventParser>, GcEventParser.Events.Info
 {
-    private const int
-        EventIdGcStart = 1,
-        EventIdGcStop = 2,
-        EventIdSuspendEEStart = 9,
-        EventIdRestartEEStop = 3,
-        EventIdHeapStats = 4,
-        EventIdAllocTick = 10;
-
     private readonly EventPairTimer<uint, GcData> _gcEventTimer = new(
-        EventIdGcStart,
-        EventIdGcStop,
+        NativeRuntimeEventSource.EventId.GcStart,
+        NativeRuntimeEventSource.EventId.GcStop,
         x => (uint)x.Payload![0]!,
         x => new GcData((uint)x.Payload![1]!, (NativeRuntimeEventSource.GCType)x.Payload![3]!));
 
     private readonly EventPairTimer<int> _gcPauseEventTimer = new(
-        EventIdSuspendEEStart,
-        EventIdRestartEEStop,
+        NativeRuntimeEventSource.EventId.SuspendEEStart,
+        NativeRuntimeEventSource.EventId.RestartEEStop,
         // Suspensions/ Resumptions are always done sequentially so there is no common value to match events on. Return a constant value as the event id.
         x => 1);
 
@@ -36,9 +28,9 @@ public class GcEventParser : IEventParser<GcEventParser>, GcEventParser.Events.I
 
     public void ProcessEvent(EventWrittenEventArgs e)
     {
-        if (e.EventId == EventIdAllocTick) return;
+        if (e.EventId == NativeRuntimeEventSource.EventId.AllocTick) return;
 
-        if (e.EventId == EventIdHeapStats)
+        if (e.EventId == NativeRuntimeEventSource.EventId.HeapStats)
         {
             HeapStats?.Invoke(new Events.HeapStatsEvent(e));
 
@@ -48,7 +40,7 @@ public class GcEventParser : IEventParser<GcEventParser>, GcEventParser.Events.I
         // flags representing the "Garbage Collection" + "Preparation for garbage collection" pause reasons
         const uint suspendGcReasons = 0x1 | 0x6;
 
-        if (e.EventId == EventIdSuspendEEStart && ((uint)e.Payload![0]! & suspendGcReasons) == 0)
+        if (e.EventId == NativeRuntimeEventSource.EventId.SuspendEEStart && ((uint)e.Payload![0]! & suspendGcReasons) == 0)
             return; // Execution engine is pausing for a reason other than GC, discard event.
 
         if (_gcPauseEventTimer.TryGetDuration(e, out var pauseDuration) == DurationResult.FinalWithDuration && pauseDuration > TimeSpan.Zero)
@@ -57,11 +49,15 @@ public class GcEventParser : IEventParser<GcEventParser>, GcEventParser.Events.I
             return;
         }
 
-        if (e.EventId == EventIdGcStart)
-            CollectionStart?.Invoke(new Events.CollectionStartEvent((uint)e.Payload![0]!, (uint)e.Payload![1]!, (NativeRuntimeEventSource.GCReason)e.Payload![2]!));
-
-        if (_gcEventTimer.TryGetDuration(e, out var gcDuration, out var gcData) == DurationResult.FinalWithDuration && gcDuration > TimeSpan.Zero)
-            CollectionComplete?.Invoke(new Events.CollectionCompleteEvent(gcData.Generation, gcData.Type, gcDuration));
+        switch (_gcEventTimer.TryGetDuration(e, out var gcDuration, out var gcData))
+        {
+            case DurationResult.Start:
+                CollectionStart?.Invoke(new Events.CollectionStartEvent((uint)e.Payload![0]!, (uint)e.Payload![1]!, (NativeRuntimeEventSource.GCReason)e.Payload![2]!));
+                break;
+            case DurationResult.FinalWithDuration when gcDuration > TimeSpan.Zero:
+                CollectionComplete?.Invoke(new Events.CollectionCompleteEvent(gcData.Generation, gcData.Type, gcDuration));
+                break;
+        }
     }
 
     private struct GcData
@@ -90,30 +86,40 @@ public class GcEventParser : IEventParser<GcEventParser>, GcEventParser.Events.I
         {
             public HeapStatsEvent(EventWrittenEventArgs e)
             {
-                Gen0SizeBytes = (ulong)e.Payload![0]!;
-                Gen1SizeBytes = (ulong)e.Payload![2]!;
-                Gen2SizeBytes = (ulong)e.Payload![4]!;
-                LohSizeBytes = (ulong)e.Payload![6]!;
-                FinalizationQueueLength = (ulong)e.Payload![9]!;
-                NumPinnedObjects = (uint)e.Payload![10]!;
+                Gen0SizeBytes = (long)(ulong)e.Payload![0]!;
+                Gen1SizeBytes = (long)(ulong)e.Payload![2]!;
+                Gen2SizeBytes = (long)(ulong)e.Payload![4]!;
+                LohSizeBytes = (long)(ulong)e.Payload![6]!;
+                FinalizationQueueLength = (long)(ulong)e.Payload![9]!;
+                NumPinnedObjects = (int)(uint)e.Payload![10]!;
 #if NET6_0_OR_GREATER
-                PohSizeBytes = (ulong)e.Payload![14]!;
+                PohSizeBytes = (long)(ulong)e.Payload![14]!;
 #endif
             }
+#if NETFRAMEWORK
+            public HeapStatsEvent(Microsoft.Diagnostics.Tracing.Parsers.Clr.GCHeapStatsTraceData data)
+            {
+                Gen0SizeBytes = data.GenerationSize0;
+                Gen1SizeBytes = data.GenerationSize1;
+                Gen2SizeBytes = data.GenerationSize2;
+                LohSizeBytes = data.GenerationSize3;
+                FinalizationQueueLength = data.FinalizationPromotedCount;
+                NumPinnedObjects = data.PinnedObjectCount;
+            }
+#endif
+            public long Gen0SizeBytes { get; }
 
-            public ulong Gen0SizeBytes { get; }
+            public long Gen1SizeBytes { get; }
 
-            public ulong Gen1SizeBytes { get; }
+            public long Gen2SizeBytes { get; }
 
-            public ulong Gen2SizeBytes { get; }
+            public long LohSizeBytes { get; }
 
-            public ulong LohSizeBytes { get; }
+            public long FinalizationQueueLength { get; }
 
-            public ulong FinalizationQueueLength { get; }
-
-            public uint NumPinnedObjects { get; }
+            public int NumPinnedObjects { get; }
 #if NET6_0_OR_GREATER
-            public ulong PohSizeBytes { get; }
+            public long PohSizeBytes { get; }
 #endif
         }
 

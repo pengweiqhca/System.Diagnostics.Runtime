@@ -7,5 +7,5 @@
 public class SystemRuntimeEventSource
 {
     // public static readonly Guid Id = new ("49592C0F-5A05-516D-AA4B-A64E02026C89");
-    public static readonly string Name = "System.Runtime";
+    public const string Name = "System.Runtime";
 }

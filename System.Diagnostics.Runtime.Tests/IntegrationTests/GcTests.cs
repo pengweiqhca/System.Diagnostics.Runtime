@@ -112,7 +112,7 @@ internal class Given_Only_Counters_Are_Available_For_GcStats : IntegrationTestBa
         }, measurements => Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.pause.ratio"),
             Is.GreaterThan(0.0).After(2000, 10)), $"{Options.MetricPrefix}gc.pause.ratio");
 }
-
+#endif
 internal class Given_Gc_Info_Events_Are_Available_For_GcStats : IntegrationTestBase
 {
     protected override RuntimeMetricsOptions GetOptions() => new() { GcEnabled = true, EnabledNativeRuntime = true };
@@ -134,19 +134,19 @@ internal class Given_Gc_Info_Events_Are_Available_For_GcStats : IntegrationTestB
             }, measurements =>
             {
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc_generation", "0"),
-                    Is.GreaterThan(0).After(200, 10));
+                    Is.GreaterThan(0).After(5000, 10));
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc_generation", "1"),
-                    Is.GreaterThan(0).After(200, 10));
+                    Is.GreaterThan(0).After(5000, 10));
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc_generation", "2"),
-                    Is.GreaterThan(0).After(200, 10));
+                    Is.GreaterThan(0).After(5000, 10));
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc_generation", "loh"),
-                Is.GreaterThan(0).After(200, 10));
+                    Is.GreaterThan(0).After(5000, 10));
 #if NET6_0_OR_GREATER
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc_generation", "poh"),
                     Is.GreaterThan(0).After(2000, 10));
 #endif
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.pinned.objects"),
-                    Is.GreaterThan(0).After(200, 10));
+                    Is.GreaterThan(0).After(5000, 10));
             }, $"{Options.MetricPrefix}gc.heap.size",
             $"{Options.MetricPrefix}gc.pinned.objects");
 
@@ -171,7 +171,7 @@ internal class Given_Gc_Info_Events_Are_Available_For_GcStats : IntegrationTestB
             const int minExpectedCollections = numCollectionsToRun / 2;
 
             Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.collection.total", "gc_generation", generation.ToString()),
-                Is.GreaterThanOrEqualTo(minExpectedCollections).After(2_000, 10)
+                Is.GreaterThanOrEqualTo(minExpectedCollections).After(5000, 10)
             );
         }, $"{Options.MetricPrefix}gc.collection.total");
     }
@@ -196,7 +196,7 @@ internal class Given_Gc_Info_Events_Are_Available_For_GcStats : IntegrationTestB
 
                 GC.Collect(0);
             }, measurements => Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.finalization.queue.length"),
-                Is.GreaterThan(0).After(200, 10)),
+                Is.GreaterThan(0).After(5000, 10)),
             $"{Options.MetricPrefix}gc.finalization.queue.length");
 
     [Test]
@@ -208,10 +208,10 @@ internal class Given_Gc_Info_Events_Are_Available_For_GcStats : IntegrationTestB
                 GC.Collect(2, GCCollectionMode.Forced, true, true);
             }, measurements =>
             {
-                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.collection.time"), Is.GreaterThan(0).After(500, 10)); // at least 3 generations
+                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.collection.time"), Is.GreaterThan(0).After(5000, 10)); // at least 3 generations
                 Assert.That(() => measurements.Values($"{Options.MetricPrefix}gc.collection.time"), Is.All.GreaterThan(0));
                 Assert.That(() => measurements.Values($"{Options.MetricPrefix}gc.collection.total"), Is.All.GreaterThan(0));
-                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.pause.time"), Is.GreaterThan(0).After(500, 10));
+                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.pause.time"), Is.GreaterThan(0).After(5000, 10));
             }, $"{Options.MetricPrefix}gc.collection.time",
             $"{Options.MetricPrefix}gc.collection.total",
             $"{Options.MetricPrefix}gc.pause.time");
@@ -225,4 +225,3 @@ internal class Given_Gc_Info_Events_Are_Available_For_GcStats : IntegrationTestB
         }
     }
 }
-#endif

@@ -6,18 +6,25 @@ namespace System.Diagnostics.Runtime.Tests.IntegrationTests;
 [TestFixture]
 public abstract class IntegrationTestBase
 {
-    private RuntimeInstrumentation _instrumentation = default!;
-    private readonly Meter _meter = new ("TestMeter");
+    private RuntimeInstrumentation? _instrumentation;
+    private readonly Meter _meter = new("TestMeter");
 
     protected RuntimeMetricsOptions Options { get; private set; } = default!;
 
     [SetUp]
-    public void SetUp() => _instrumentation = new RuntimeInstrumentation(Options = GetOptions());
+    public void SetUp()
+    {
+        Options = GetOptions();
+#if NETFRAMEWORK
+        Options.EtwSessionName = "System.Diagnostics.Runtime.Tests.IntegrationTests";
+#endif
+        _instrumentation = new RuntimeInstrumentation(Options);
+    }
 
     [TearDown]
     public void TearDown()
     {
-        _instrumentation.Dispose();
+        _instrumentation?.Dispose();
 
         _meter.Dispose();
     }

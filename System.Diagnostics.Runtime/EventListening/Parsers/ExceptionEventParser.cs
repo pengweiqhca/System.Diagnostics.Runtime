@@ -5,8 +5,6 @@ namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
 public class ExceptionEventParser : IEventParser<ExceptionEventParser>, ExceptionEventParser.Events.Error
 {
-    private const int EventIdExceptionThrown = 80;
-
     public event Action<Events.ExceptionThrownEvent>? ExceptionThrown;
 
     public string EventSourceName => NativeRuntimeEventSource.Name;
@@ -14,7 +12,7 @@ public class ExceptionEventParser : IEventParser<ExceptionEventParser>, Exceptio
 
     public void ProcessEvent(EventWrittenEventArgs e)
     {
-        if (e.EventId == EventIdExceptionThrown)
+        if (e.EventId == NativeRuntimeEventSource.EventId.ExceptionThrown)
             ExceptionThrown?.Invoke(new Events.ExceptionThrownEvent((string?)e.Payload?[0]));
     }
 

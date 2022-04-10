@@ -22,7 +22,13 @@ public static class MeterProviderBuilderExtensions
 
         var options = new RuntimeMetricsOptions();
 
-        if (configure == null) options.EnabledNativeRuntime = true;
+        if (configure == null)
+        {
+            options.EnabledNativeRuntime = true;
+#if NETFRAMEWORK
+            options.EtwSessionName = "NetFrameworkExample";
+#endif
+        }
         else configure.Invoke(options);
 
         builder.AddMeter(RuntimeInstrumentation.InstrumentationName);

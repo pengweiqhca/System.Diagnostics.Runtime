@@ -1,6 +1,5 @@
 ﻿using NUnit.Framework;
 
-#if NETCOREAPP
 namespace System.Diagnostics.Runtime.Tests.IntegrationTests;
 
 [TestFixture]
@@ -30,11 +29,12 @@ internal class Given_Exception_Events_Are_Enabled_For_Exception_Stats : Integrat
                 }
             }, measurements =>
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}exception.total", "type", "System.DivideByZeroException"),
-                    Is.GreaterThanOrEqualTo(numToThrow).After(1000, 10)),
+                    Is.GreaterThanOrEqualTo(numToThrow).After(5000, 10)),
             $"{Options.MetricPrefix}exception.total");
     }
 }
 
+#if NETCOREAPP
 [TestFixture]
 internal class Given_Only_Runtime_Counters_Are_Enabled_For_Exception_Stats : IntegrationTestBase
 {

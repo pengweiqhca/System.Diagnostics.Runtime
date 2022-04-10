@@ -10,7 +10,7 @@
 public class NativeRuntimeEventSource
 {
     // public static readonly Guid Id = Guid.Parse("13c0d23-ccbc-4e12-931b-d9cc2eee27e4");
-    public static readonly string Name = "Microsoft-Windows-DotNETRuntime";
+    public const string Name = "Microsoft-Windows-DotNETRuntime";
 
     [Flags]
     public enum Keywords : long
@@ -220,5 +220,24 @@ public class NativeRuntimeEventSource
         Stabilizing,
         Starvation,
         ThreadTimedOut
+    }
+
+    //https://docs.microsoft.com/en-us/dotnet/framework/performance/clr-etw-events
+    public static class EventId
+    {
+        public const int GcStart = 1;
+        public const int GcStop = 2;
+        public const int RestartEEStop = 3;
+        public const int HeapStats = 4;
+        public const int SuspendEEStart = 9;
+        public const int AllocTick = 10;
+        public const int IoThreadCreate = 44;
+        public const int IoThreadTerminate = 45;
+        public const int IoThreadRetire = 46;
+        public const int IoThreadUnretire = 47;
+        public const int ThreadPoolAdjustment = 55;
+        public const int ExceptionThrown = 80;
+        public const int ContentionStart = 81;
+        public const int ContentionStop = 91;
     }
 }

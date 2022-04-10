@@ -6,7 +6,6 @@ namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
 public class ContentionEventParser : IEventParser<ContentionEventParser>, ContentionEventParser.Events.Info
 {
-    private const int EventIdContentionStart = 81, EventIdContentionStop = 91;
     private readonly EventPairTimer<long> _eventPairTimer;
 
     public event Action<Events.ContentionEndEvent>? ContentionEnd;
@@ -14,8 +13,8 @@ public class ContentionEventParser : IEventParser<ContentionEventParser>, Conten
     public ContentionEventParser()
     {
         _eventPairTimer = new EventPairTimer<long>(
-            EventIdContentionStart,
-            EventIdContentionStop,
+            NativeRuntimeEventSource.EventId.ContentionStart,
+            NativeRuntimeEventSource.EventId.ContentionStop,
 #if NETCOREAPP
             x => x.OSThreadId
 #else

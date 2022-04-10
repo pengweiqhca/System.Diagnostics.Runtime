@@ -7,5 +7,5 @@
 /// <see href="https://github.com/dotnet/runtime/blob/main/src/libraries/System.Net.NameResolution/src/System/Net/NameResolutionTelemetry.cs"/>
 public class NameResolutionEventSource
 {
-    public static readonly string Name = "System.Net.NameResolution";
+    public const string Name = "System.Net.NameResolution";
 }

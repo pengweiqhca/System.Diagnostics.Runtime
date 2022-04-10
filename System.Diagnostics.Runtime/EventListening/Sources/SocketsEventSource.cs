@@ -7,5 +7,5 @@
 /// <see href="https://github.com/dotnet/runtime/blob/main/src/libraries/System.Net.Sockets/src/System/Net/Sockets/SocketsTelemetry.cs"/>
 public class SocketsEventSource
 {
-    public static readonly string Name = "System.Net.Sockets";
+    public const string Name = "System.Net.Sockets";
 }

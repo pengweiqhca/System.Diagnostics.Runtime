@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.Tracing;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Tracing;
 
 namespace System.Diagnostics.Runtime.Util;
 
@@ -48,9 +49,9 @@ public class EventPairTimer<TId, TEventData>
         if (e.EventId == _startEventId)
         {
 #if NETCOREAPP
-            _eventStartedAtCache.Set(_extractEventIdFn(e), _extractData(e), e.TimeStamp);
+            _eventStartedAtCache.Set(_extractEventIdFn(e), startEventData = _extractData(e), e.TimeStamp);
 #else
-            _eventStartedAtCache.Set(_extractEventIdFn(e), _extractData(e), DateTime.Now);
+            _eventStartedAtCache.Set(_extractEventIdFn(e), startEventData = _extractData(e), DateTime.Now);
 #endif
             return DurationResult.Start;
         }
@@ -80,8 +81,45 @@ public sealed class EventPairTimer<TId> : EventPairTimer<TId, int>
     where TId : struct
 {
     public EventPairTimer(int startEventId, int endEventId, Func<EventWrittenEventArgs, TId> extractEventIdFn, Cache<TId, int>? cache = null)
-        : base(startEventId, endEventId, extractEventIdFn, _ => 0, cache) { }
+        : base(startEventId, endEventId, extractEventIdFn, _ => 0, cache)
+    {
+    }
 
     public DurationResult TryGetDuration(EventWrittenEventArgs e, out TimeSpan duration) =>
         TryGetDuration(e, out duration, out _);
 }
+#if NETFRAMEWORK
+internal class EventTimer<TId, TData>
+    where TId : struct
+    where TData : struct
+{
+    private readonly Cache<TId, TData> _eventStartedAtCache;
+
+    public EventTimer(Cache<TId, TData>? cache = null) =>
+        _eventStartedAtCache = cache ?? new(TimeSpan.FromMinutes(1));
+
+    public void Start(TId key, TData data, DateTime timeStamp) =>
+        _eventStartedAtCache.Set(key, data, timeStamp);
+
+    public bool TryStop(TId key, DateTime timeStamp, out TimeSpan duration, out TData startEventData)
+    {
+        duration = TimeSpan.Zero;
+
+        if (!_eventStartedAtCache.TryRemove(key, out startEventData, out var startedAt))
+            return false;
+
+        duration = timeStamp - startedAt;
+
+        return true;
+    }
+}
+
+internal class EventTimer<TId> : EventTimer<TId, int>
+    where TId : struct
+{
+    public void Start(TId key, DateTime timeStamp) => Start(key, 0, timeStamp);
+
+    public bool TryStop(TId key, DateTime timeStamp, out TimeSpan duration) =>
+        TryStop(key, timeStamp, out duration, out _);
+}
+#endif

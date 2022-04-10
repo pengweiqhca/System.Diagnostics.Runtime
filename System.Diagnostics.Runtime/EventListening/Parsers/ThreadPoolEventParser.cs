@@ -15,14 +15,14 @@ public class ThreadPoolEventParser : IEventParser<ThreadPoolEventParser>, Thread
         switch (e.EventId)
         {
             case NativeRuntimeEventSource.EventId.ThreadPoolAdjustment:
-                ThreadPoolAdjusted?.Invoke(new Events.ThreadPoolAdjustedEvent((uint) e.Payload![1]!, (NativeRuntimeEventSource.ThreadAdjustmentReason) e.Payload![2]!));
+                ThreadPoolAdjusted?.Invoke(new ((uint) e.Payload![1]!, (NativeRuntimeEventSource.ThreadAdjustmentReason) e.Payload![2]!));
                 return;
 
             case NativeRuntimeEventSource.EventId.IoThreadCreate:
             case NativeRuntimeEventSource.EventId.IoThreadRetire:
             case NativeRuntimeEventSource.EventId.IoThreadUnretire:
             case NativeRuntimeEventSource.EventId.IoThreadTerminate:
-                IoThreadPoolAdjusted?.Invoke(new Events.IoThreadPoolAdjustedEvent((uint) e.Payload![0]!));
+                IoThreadPoolAdjusted?.Invoke(new ((uint) e.Payload![0]!));
                 return;
         }
     }

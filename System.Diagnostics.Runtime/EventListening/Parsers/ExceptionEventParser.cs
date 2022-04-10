@@ -13,7 +13,7 @@ public class ExceptionEventParser : IEventParser<ExceptionEventParser>, Exceptio
     public void ProcessEvent(EventWrittenEventArgs e)
     {
         if (e.EventId == NativeRuntimeEventSource.EventId.ExceptionThrown)
-            ExceptionThrown?.Invoke(new Events.ExceptionThrownEvent((string?)e.Payload?[0]));
+            ExceptionThrown?.Invoke(new ((string?)e.Payload?[0]));
     }
 
     public static class Events

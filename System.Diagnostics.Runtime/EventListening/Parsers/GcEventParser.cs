@@ -32,7 +32,7 @@ public class GcEventParser : IEventParser<GcEventParser>, GcEventParser.Events.I
 
         if (e.EventId == NativeRuntimeEventSource.EventId.HeapStats)
         {
-            HeapStats?.Invoke(new Events.HeapStatsEvent(e));
+            HeapStats?.Invoke(new (e));
 
             return;
         }
@@ -45,17 +45,17 @@ public class GcEventParser : IEventParser<GcEventParser>, GcEventParser.Events.I
 
         if (_gcPauseEventTimer.TryGetDuration(e, out var pauseDuration) == DurationResult.FinalWithDuration && pauseDuration > TimeSpan.Zero)
         {
-            PauseComplete?.Invoke(new Events.PauseCompleteEvent(pauseDuration));
+            PauseComplete?.Invoke(new (pauseDuration));
             return;
         }
 
         switch (_gcEventTimer.TryGetDuration(e, out var gcDuration, out var gcData))
         {
             case DurationResult.Start:
-                CollectionStart?.Invoke(new Events.CollectionStartEvent((uint)e.Payload![0]!, (uint)e.Payload![1]!, (NativeRuntimeEventSource.GCReason)e.Payload![2]!));
+                CollectionStart?.Invoke(new ((uint)e.Payload![0]!, (uint)e.Payload![1]!, (NativeRuntimeEventSource.GCReason)e.Payload![2]!));
                 break;
             case DurationResult.FinalWithDuration when gcDuration > TimeSpan.Zero:
-                CollectionComplete?.Invoke(new Events.CollectionCompleteEvent(gcData.Generation, gcData.Type, gcDuration));
+                CollectionComplete?.Invoke(new (gcData.Generation, gcData.Type, gcDuration));
                 break;
         }
     }

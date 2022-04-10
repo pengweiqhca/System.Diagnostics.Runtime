@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿# Metrics exposed
+﻿﻿﻿﻿﻿﻿﻿# Metrics exposed
 
 > ☑️ Need set `EnabledNativeRuntime = true`
 
@@ -13,6 +13,7 @@
 | exception  | `exception.total`                                | Counter | | Count of exceptions thrown                                                                                                       | |  | ☑️ | ☑️ |
 | exception  | `exception.total`                                | Counter |  | Count of exceptions thrown, broken down by type                                                                                  | type | ☑️ | ☑️ | ☑️ |
 | gc         | `gc.allocated.total`                             | Counter | B | Allocation bytes since process start                                                                                             | |  | ✅ | ✅ |
+| gc | `gc.allocated.total` | Counter | B | Allocation bytes since process start | gc_heap | ☑️ | ☑️ | ☑️ |
 | gc         | `gc.fragmentation`                               | Gauge | % | GC fragmentation                                                                                                                 | |  | ✅ | ✅ |
 | gc         | `gc.memory.total.available`                      | Gauge | B | The upper limit on the amount of physical memory .NET can allocate to                                                            | |  | ✅ | ✅ |
 | gc         | `gc.committed.total`                             | Counter | B | GC Committed bytes since process start                                                                                           | |  |  | ✅ |

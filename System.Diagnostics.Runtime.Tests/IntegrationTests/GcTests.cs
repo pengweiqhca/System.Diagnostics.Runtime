@@ -80,7 +80,7 @@ internal class Given_Are_Available_For_GcStats : IntegrationTestBase
     }
 }
 #if NETCOREAPP
-internal class Given_Only_Counters_Are_Available_For_GcStats : IntegrationTestBase
+internal class Given_System_Runtime_Are_Available_For_GcStats : IntegrationTestBase
 {
     protected override RuntimeMetricsOptions GetOptions() => new() { GcEnabled = true, EnabledSystemRuntime = true };
 
@@ -113,7 +113,7 @@ internal class Given_Only_Counters_Are_Available_For_GcStats : IntegrationTestBa
             Is.GreaterThan(0.0).After(2000, 10)), $"{Options.MetricPrefix}gc.pause.ratio");
 }
 #endif
-internal class Given_Gc_Info_Events_Are_Available_For_GcStats : IntegrationTestBase
+internal class Given_Native_Runtime_Are_Available_For_GcStats : IntegrationTestBase
 {
     protected override RuntimeMetricsOptions GetOptions() => new() { GcEnabled = true, EnabledNativeRuntime = true };
 
@@ -215,6 +215,30 @@ internal class Given_Gc_Info_Events_Are_Available_For_GcStats : IntegrationTestB
             }, $"{Options.MetricPrefix}gc.collection.time",
             $"{Options.MetricPrefix}gc.collection.total",
             $"{Options.MetricPrefix}gc.pause.time");
+
+    [Test]
+    public Task When_100kb_of_small_objects_are_allocated_then_the_allocated_bytes_counter_is_increased() =>
+        InstrumentTest.Assert(() =>
+            {
+                // allocate roughly 100kb+ of small objects
+                for (var i = 0; i < 11; i++)
+                {
+                    _ = new byte[10_000];
+                }
+            }, measurements => Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.allocated.total", "gc_heap", "soh"), Is.GreaterThanOrEqualTo(100_000).After(2_000, 10)),
+            $"{Options.MetricPrefix}gc.allocated.total");
+
+    [Test]
+    public Task When_a_100kb_large_object_is_allocated_then_the_allocated_bytes_counter_is_increased() =>
+        InstrumentTest.Assert(() =>
+            {
+                // allocate roughly 100kb+ of small objects
+                for (var i = 0; i < 11; i++)
+                {
+                    _ = new byte[100_000];
+                }
+            }, measurements => Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.allocated.total", "gc_heap", "loh"), Is.GreaterThanOrEqualTo(100_0000).After(2_000, 10)),
+            $"{Options.MetricPrefix}gc.allocated.total");
 
     private class FinalizableTest
     {

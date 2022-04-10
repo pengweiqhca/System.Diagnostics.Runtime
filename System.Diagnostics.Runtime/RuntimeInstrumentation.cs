@@ -17,6 +17,7 @@ public class RuntimeInstrumentation : IDisposable
         LabelType = "type",
         LabelReason = "gc_reason",
         LabelGcType = "gc_type",
+        LabelHeap = "gc_heap",
         LabelGeneration = "gc_generation";
 
     private static readonly Dictionary<NativeRuntimeEventSource.ThreadAdjustmentReason, string> AdjustmentReasonToLabel = LabelGenerator.MapEnumToLabelValues<NativeRuntimeEventSource.ThreadAdjustmentReason>();
@@ -126,7 +127,7 @@ public class RuntimeInstrumentation : IDisposable
             {
                 parser = new GcEventParser();
 
-                disposables.Add(new DotNetEventListener(parser, EventLevel.Informational, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
+                disposables.Add(new DotNetEventListener(parser, EventLevel.Verbose, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
             }
 
             if (options.EnabledSystemRuntime && runtimeParser == null)
@@ -141,11 +142,14 @@ public class RuntimeInstrumentation : IDisposable
                 new EventConsumer<RuntimeEventParser.Events.CountersV5_0>(runtimeParser),
 #endif
                 new EventConsumer<RuntimeEventParser.Events.CountersV3_0>(runtimeParser),
-            new EventConsumer<GcEventParser.Events.Info>(parser));
+                new EventConsumer<GcEventParser.Events.Verbose>(parser),
+                new EventConsumer<GcEventParser.Events.Info>(parser));
 #else
             if (options.EnabledNativeRuntime) CreateEtlParser();
 
-            GcInstrumentation(meter, options, new EventConsumer<GcEventParser.Events.Info>(etlParser));
+            GcInstrumentation(meter, options,
+                new EventConsumer<GcEventParser.Events.Verbose>(etlParser),
+                new EventConsumer<GcEventParser.Events.Info>(etlParser));
 #endif
         }
 #if NET6_0_OR_GREATER
@@ -288,10 +292,19 @@ public class RuntimeInstrumentation : IDisposable
 #endif
         IConsumes<RuntimeEventParser.Events.CountersV3_0> runtimeCounters,
 #endif
+        IConsumes<GcEventParser.Events.Verbose> gcVerbose,
         IConsumes<GcEventParser.Events.Info> gcInfo)
     {
+        if (gcVerbose.Enabled)
+        {
+            var allocated = meter.CreateCounter<long>($"{options.MetricPrefix}gc.allocated.total", "B", "Allocation bytes since process start");
+
+            gcVerbose.Events.AllocationTick += e => allocated.Add(e.AllocatedBytes, CreateTag(LabelHeap, e.IsLargeObjectHeap ? "loh" : "soh"));
+        }
 #if NETCOREAPP
-        meter.CreateObservableCounter($"{options.MetricPrefix}gc.allocated.total", () => GC.GetTotalAllocatedBytes(), "B", "Allocation bytes since process start");
+        else
+            meter.CreateObservableCounter($"{options.MetricPrefix}gc.allocated.total", () => GC.GetTotalAllocatedBytes(), "B", "Allocation bytes since process start");
+
         meter.CreateObservableGauge($"{options.MetricPrefix}gc.fragmentation", GetFragmentation, "%", "GC fragmentation");
         meter.CreateObservableGauge($"{options.MetricPrefix}gc.memory.total.available",
             () => GC.GetGCMemoryInfo().TotalAvailableMemoryBytes,

@@ -14,6 +14,7 @@ public class EtlParser : IDisposable,
     ContentionEventParser.Events.Info,
     ExceptionEventParser.Events.Error,
     GcEventParser.Events.Info,
+    GcEventParser.Events.Verbose,
     ThreadPoolEventParser.Events.Info
 {
     // flags representing the "Garbage Collection" + "Preparation for garbage collection" pause reasons
@@ -40,6 +41,7 @@ public class EtlParser : IDisposable,
         _session.Source.Clr.GCRestartEEStop += GCRestartEEStop;
         _session.Source.Clr.GCStart += GCStart;
         _session.Source.Clr.GCStop += GCStop;
+        _session.Source.Clr.GCAllocationTick += GCAllocationTick;
         _session.Source.Clr.ThreadPoolWorkerThreadAdjustmentAdjustment += ThreadPoolWorkerThreadAdjustment;
         _session.Source.Clr.IOThreadCreationStop += IOThreadAdjustment;
         _session.Source.Clr.IOThreadRetirementStop += IOThreadAdjustment;
@@ -71,6 +73,7 @@ public class EtlParser : IDisposable,
                         NativeRuntimeEventSource.EventId.RestartEEStop,
                         NativeRuntimeEventSource.EventId.HeapStats,
                         NativeRuntimeEventSource.EventId.SuspendEEStart,
+                        NativeRuntimeEventSource.EventId.AllocTick,
                         NativeRuntimeEventSource.EventId.ThreadPoolAdjustment,
                         NativeRuntimeEventSource.EventId.IoThreadCreate,
                         NativeRuntimeEventSource.EventId.IoThreadRetire,
@@ -89,6 +92,7 @@ public class EtlParser : IDisposable,
             _session.Source.Clr.GCRestartEEStop -= GCRestartEEStop;
             _session.Source.Clr.GCStart -= GCStart;
             _session.Source.Clr.GCStop -= GCStop;
+            _session.Source.Clr.GCAllocationTick -= GCAllocationTick;
             _session.Source.Clr.ThreadPoolWorkerThreadAdjustmentAdjustment -= ThreadPoolWorkerThreadAdjustment;
             _session.Source.Clr.IOThreadCreationStop -= IOThreadAdjustment;
             _session.Source.Clr.IOThreadRetirementStop -= IOThreadAdjustment;
@@ -108,6 +112,7 @@ public class EtlParser : IDisposable,
             _session.Source.Clr.GCRestartEEStop -= GCRestartEEStop;
             _session.Source.Clr.GCStart -= GCStart;
             _session.Source.Clr.GCStop -= GCStop;
+            _session.Source.Clr.GCAllocationTick -= GCAllocationTick;
             _session.Source.Clr.ThreadPoolWorkerThreadAdjustmentAdjustment -= ThreadPoolWorkerThreadAdjustment;
             _session.Source.Clr.IOThreadCreationStop -= IOThreadAdjustment;
             _session.Source.Clr.IOThreadRetirementStop -= IOThreadAdjustment;
@@ -120,6 +125,7 @@ public class EtlParser : IDisposable,
     public event Action<GcEventParser.Events.PauseCompleteEvent>? PauseComplete;
     public event Action<GcEventParser.Events.CollectionStartEvent>? CollectionStart;
     public event Action<GcEventParser.Events.CollectionCompleteEvent>? CollectionComplete;
+    public event Action<GcEventParser.Events.AllocationTickEvent>? AllocationTick;
     public event Action<ThreadPoolEventParser.Events.ThreadPoolAdjustedEvent>? ThreadPoolAdjusted;
     public event Action<ThreadPoolEventParser.Events.IoThreadPoolAdjustedEvent>? IoThreadPoolAdjusted;
 
@@ -192,6 +198,14 @@ public class EtlParser : IDisposable,
             duration > TimeSpan.Zero &&
             CollectionComplete is { } func)
             func(new((uint)data.Depth, gcType, duration));
+    }
+
+    private void GCAllocationTick(GCAllocationTickTraceData data)
+    {
+        if (data.ProcessID != ProcessId) return;
+
+        if (AllocationTick is { } func)
+            func(new((uint)data.AllocationAmount, data.AllocationKind == GCAllocationKind.Large));
     }
 
     private void ThreadPoolWorkerThreadAdjustment(ThreadPoolWorkerThreadAdjustmentTraceData data)

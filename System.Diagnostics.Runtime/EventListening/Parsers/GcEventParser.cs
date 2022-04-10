@@ -4,7 +4,7 @@ using System.Diagnostics.Tracing;
 
 namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
-public class GcEventParser : IEventParser<GcEventParser>, GcEventParser.Events.Info
+public class GcEventParser : IEventParser<GcEventParser>, GcEventParser.Events.Info, GcEventParser.Events.Verbose
 {
     private readonly EventPairTimer<uint, GcData> _gcEventTimer = new(
         NativeRuntimeEventSource.EventId.GcStart,
@@ -22,17 +22,25 @@ public class GcEventParser : IEventParser<GcEventParser>, GcEventParser.Events.I
     public event Action<Events.PauseCompleteEvent>? PauseComplete;
     public event Action<Events.CollectionStartEvent>? CollectionStart;
     public event Action<Events.CollectionCompleteEvent>? CollectionComplete;
+    public event Action<Events.AllocationTickEvent>? AllocationTick;
 
     public string EventSourceName => NativeRuntimeEventSource.Name;
     public EventKeywords Keywords => (EventKeywords)NativeRuntimeEventSource.Keywords.GC;
 
     public void ProcessEvent(EventWrittenEventArgs e)
     {
-        if (e.EventId == NativeRuntimeEventSource.EventId.AllocTick) return;
+        if (e.EventId == NativeRuntimeEventSource.EventId.AllocTick)
+        {
+            const uint lohHeapFlag = 0x1;
+
+            AllocationTick?.Invoke(new((uint)e.Payload![0]!, ((uint)e.Payload![1]! & lohHeapFlag) == lohHeapFlag));
+
+            return;
+        }
 
         if (e.EventId == NativeRuntimeEventSource.EventId.HeapStats)
         {
-            HeapStats?.Invoke(new (e));
+            HeapStats?.Invoke(new(e));
 
             return;
         }
@@ -45,17 +53,17 @@ public class GcEventParser : IEventParser<GcEventParser>, GcEventParser.Events.I
 
         if (_gcPauseEventTimer.TryGetDuration(e, out var pauseDuration) == DurationResult.FinalWithDuration && pauseDuration > TimeSpan.Zero)
         {
-            PauseComplete?.Invoke(new (pauseDuration));
+            PauseComplete?.Invoke(new(pauseDuration));
             return;
         }
 
         switch (_gcEventTimer.TryGetDuration(e, out var gcDuration, out var gcData))
         {
             case DurationResult.Start:
-                CollectionStart?.Invoke(new ((uint)e.Payload![0]!, (uint)e.Payload![1]!, (NativeRuntimeEventSource.GCReason)e.Payload![2]!));
+                CollectionStart?.Invoke(new((uint)e.Payload![0]!, (uint)e.Payload![1]!, (NativeRuntimeEventSource.GCReason)e.Payload![2]!));
                 break;
             case DurationResult.FinalWithDuration when gcDuration > TimeSpan.Zero:
-                CollectionComplete?.Invoke(new (gcData.Generation, gcData.Type, gcDuration));
+                CollectionComplete?.Invoke(new(gcData.Generation, gcData.Type, gcDuration));
                 break;
         }
     }
@@ -80,6 +88,11 @@ public class GcEventParser : IEventParser<GcEventParser>, GcEventParser.Events.I
             event Action<PauseCompleteEvent> PauseComplete;
             event Action<CollectionStartEvent> CollectionStart;
             event Action<CollectionCompleteEvent> CollectionComplete;
+        }
+
+        public interface Verbose : IVerboseEvents
+        {
+            event Action<AllocationTickEvent> AllocationTick;
         }
 
         public record struct HeapStatsEvent
@@ -128,5 +141,7 @@ public class GcEventParser : IEventParser<GcEventParser>, GcEventParser.Events.I
         public record struct CollectionStartEvent(uint Count, uint Generation, NativeRuntimeEventSource.GCReason Reason);
 
         public record struct CollectionCompleteEvent(uint Generation, NativeRuntimeEventSource.GCType Type, TimeSpan Duration);
+
+        public record struct AllocationTickEvent(uint AllocatedBytes, bool IsLargeObjectHeap);
     }
 }

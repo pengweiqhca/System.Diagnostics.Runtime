@@ -145,7 +145,7 @@
         /// <summary>
         /// Gets or sets the name of the session to open. Should be unique across the machine.
         /// </summary>
-        /// <remarks>If EnabledNativeRuntime is true, EtwSessionName must have value.</remarks>
+        /// <remarks>If EnabledNativeRuntime is true, EtwSessionName must have value. Administrator rights required to start ETW.</remarks>
         public string? EtwSessionName { get; set; }
 #endif
     }

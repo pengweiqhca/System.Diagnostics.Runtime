@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Tracing;
+﻿using System.Diagnostics.Tracing;
 
 namespace System.Diagnostics.Runtime.Util;
 
@@ -89,7 +88,7 @@ public sealed class EventPairTimer<TId> : EventPairTimer<TId, int>
         TryGetDuration(e, out duration, out _);
 }
 #if NETFRAMEWORK
-internal class EventTimer<TId, TData>
+public class EventTimer<TId, TData>
     where TId : struct
     where TData : struct
 {
@@ -114,7 +113,7 @@ internal class EventTimer<TId, TData>
     }
 }
 
-internal class EventTimer<TId> : EventTimer<TId, int>
+public class EventTimer<TId> : EventTimer<TId, int>
     where TId : struct
 {
     public void Start(TId key, DateTime timeStamp) => Start(key, 0, timeStamp);

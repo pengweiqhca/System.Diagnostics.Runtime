@@ -14,6 +14,7 @@ namespace System.Diagnostics.Runtime;
 public class RuntimeInstrumentation : IDisposable
 {
     private const string
+        LabelAdjustmentReason = "adjustment_reason",
         LabelType = "type",
         LabelReason = "gc_reason",
         LabelGcType = "gc_type",
@@ -39,7 +40,7 @@ public class RuntimeInstrumentation : IDisposable
 #if NETCOREAPP
         RuntimeEventParser? runtimeParser = null;
 #else
-        EtlParser? etlParser = null;
+        EtwParser? etlParser = null;
 
         void CreateEtlParser()
         {
@@ -50,7 +51,7 @@ public class RuntimeInstrumentation : IDisposable
 
             try
             {
-                disposables!.Add(etlParser = new EtlParser(options.EtwSessionName!));
+                disposables!.Add(etlParser = new EtwParser(options.EtwSessionName!));
             }
             catch (Exception ex)
             {
@@ -574,9 +575,21 @@ public class RuntimeInstrumentation : IDisposable
             var adjustmentsTotal = meter.CreateCounter<int>(
                 $"{options.MetricPrefix}threadpool.adjustments.total",
                 description: "The total number of changes made to the size of the thread pool, labeled by the reason for change");
+#if NETFRAMEWORK
+            var threadCount = 0;
 
             threadPoolInfo.Events.ThreadPoolAdjusted += e =>
-                adjustmentsTotal.Add(1, CreateTag("adjustment_reason", AdjustmentReasonToLabel[e.AdjustmentReason]));
+            {
+                threadCount = (int)e.NumThreads;
+
+                adjustmentsTotal.Add(1, CreateTag(LabelAdjustmentReason, AdjustmentReasonToLabel[e.AdjustmentReason]));
+            };
+
+            meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.thread.count", () => threadCount, description: "ThreadPool thread count");
+#else
+            threadPoolInfo.Events.ThreadPoolAdjusted += e =>
+                adjustmentsTotal.Add(1, CreateTag(LabelAdjustmentReason, AdjustmentReasonToLabel[e.AdjustmentReason]));
+#endif
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {

@@ -10,7 +10,7 @@ namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
 //https://github.com/microsoft/perfview/blob/main/documentation/TraceEvent/TraceEventProgrammersGuide.md
 //https://labs.criteo.com/2018/07/grab-etw-session-providers-and-events/
-public class EtlParser : IDisposable,
+public class EtwParser : IDisposable,
     ContentionEventParser.Events.Info,
     ExceptionEventParser.Events.Error,
     GcEventParser.Events.Info,
@@ -26,7 +26,7 @@ public class EtlParser : IDisposable,
     private readonly EventTimer<int> _gcPauseTimer = new();
     private readonly EventTimer<int, NativeRuntimeEventSource.GCType> _gcTimer = new();
 
-    public EtlParser(string etwSessionName)
+    public EtwParser(string etwSessionName)
     {
         _session = new TraceEventSession(etwSessionName,
             TraceEventSessionOptions.Create |

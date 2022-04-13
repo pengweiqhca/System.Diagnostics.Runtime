@@ -16,9 +16,9 @@ internal class Enabled_For_ThreadPoolStats : IntegrationTestBase
         return InstrumentTest.Assert(async () =>
             {
                 // need to schedule a bunch of IO work to make the IO pool grow
-                using var client = new HttpClient();
+                using var client = new HttpClient() { Timeout = TimeSpan.FromSeconds(10) };
 
-                var httpTasks = Enumerable.Range(1, 50)
+                var httpTasks = Enumerable.Range(1, 10)
                     .Select(_ => client.GetAsync("http://www.bing.com"));
 
                 await Task.WhenAll(httpTasks).ConfigureAwait(false);

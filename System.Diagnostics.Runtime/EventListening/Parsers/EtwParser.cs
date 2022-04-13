@@ -28,20 +28,43 @@ public class EtwParser : IDisposable,
 
     public EtwParser(string etwSessionName)
     {
+        try
+        {
+            _session = new TraceEventSession(etwSessionName, TraceEventSessionOptions.Attach);
+
+            _session.Dispose(); // Try delete the exits session.
+        }
+        catch
+        {
+            // ignored
+        }
+
         _session = new TraceEventSession(etwSessionName,
             TraceEventSessionOptions.Create |
             TraceEventSessionOptions.NoRestartOnCreate |
             TraceEventSessionOptions.NoPerProcessorBuffering);
-
         try
         {
             _session.Source.Clr.ContentionStart += ContentionStart;
         }
         catch (Exception)
         {
-            _session.Dispose();
+            _session.Dispose(); // Try delete the exits session.
 
-            throw;
+            _session = new TraceEventSession(etwSessionName,
+                TraceEventSessionOptions.Create |
+                TraceEventSessionOptions.NoRestartOnCreate |
+                TraceEventSessionOptions.NoPerProcessorBuffering);
+            try
+            {
+                _session.Source.Clr.ContentionStart += ContentionStart;
+            }
+            catch (Exception)
+            {
+                _session.Dispose();
+
+                throw;
+            }
         }
 
         _session.Source.Clr.ContentionStop += ContentionStop;

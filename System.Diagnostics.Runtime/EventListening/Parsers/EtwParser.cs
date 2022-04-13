@@ -33,7 +33,17 @@ public class EtwParser : IDisposable,
             TraceEventSessionOptions.NoRestartOnCreate |
             TraceEventSessionOptions.NoPerProcessorBuffering);
 
-        _session.Source.Clr.ContentionStart += ContentionStart;
+        try
+        {
+            _session.Source.Clr.ContentionStart += ContentionStart;
+        }
+        catch (Exception)
+        {
+            _session.Dispose();
+
+            throw;
+        }
+
         _session.Source.Clr.ContentionStop += ContentionStop;
         _session.Source.Clr.ExceptionStart += ExceptionStart;
         _session.Source.Clr.GCHeapStats += GCHeapStats;

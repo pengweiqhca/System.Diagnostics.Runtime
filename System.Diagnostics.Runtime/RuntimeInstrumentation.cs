@@ -44,10 +44,7 @@ public class RuntimeInstrumentation : IDisposable
 
         void CreateEtlParser()
         {
-            if (etlParser != null) return;
-
-            if (string.IsNullOrWhiteSpace(options.EtwSessionName))
-                throw new ArgumentException("If EnabledNativeRuntime is true, EtwSessionName must have value.");
+            if (etlParser != null || string.IsNullOrWhiteSpace(options.EtwSessionName)) return;
 
             try
             {

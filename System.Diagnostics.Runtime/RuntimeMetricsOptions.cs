@@ -145,9 +145,7 @@ public class RuntimeMetricsOptions
     /// <summary>
     /// Gets or sets the name of the session to open. Should be unique across the machine.
     /// </summary>
-    /// <remarks>If EnabledNativeRuntime is true, EtwSessionName must have value. Administrator rights required to start ETW.</remarks>
+    /// <remarks>If EnabledNativeRuntime is true and EtwSessionName has value, will start ETW session read metrics. Administrator rights required to start ETW.</remarks>
     public string? EtwSessionName { get; set; }
-
-    public Microsoft.Diagnostics.Tracing.Session.TraceEventProviderOptions ProviderOptions { get; } = new();
 #endif
 }

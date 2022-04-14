@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 
-// ReSharper disable once CheckNamespace
+namespace System.Diagnostics.Runtime.Util;
+
 internal static class Interop
 {
     internal static class Sys
@@ -8,9 +9,9 @@ internal static class Interop
         [StructLayout(LayoutKind.Sequential)]
         internal struct ProcessCpuInformation
         {
-            internal ulong lastRecordedCurrentTime;
-            internal ulong lastRecordedKernelTime;
-            internal ulong lastRecordedUserTime;
+            private readonly ulong lastRecordedCurrentTime;
+            private readonly ulong lastRecordedKernelTime;
+            private readonly ulong lastRecordedUserTime;
         }
 
         [DllImport("libSystem.Native", EntryPoint = "SystemNative_GetCpuUtilization")]

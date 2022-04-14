@@ -10,10 +10,10 @@ public static class Simulate
         bool simulateAlloc = true,
         bool simulateJit = true,
         bool simulateException = true,
-        bool simulateBlocking = false,
+        bool simulateBlocking = true,
         Func<HttpClient>? simulateOutgoingNetwork = null)
     {
-        GC.Collect(0);
+        GC.Collect(0, GCCollectionMode.Forced);
 
         var r = new Random();
         if (simulateAlloc)

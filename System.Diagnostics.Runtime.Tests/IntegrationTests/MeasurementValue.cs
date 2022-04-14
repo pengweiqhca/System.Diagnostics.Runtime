@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics.Metrics;
 using System.Net;
 using System.Text;
-using System.Web;
 
 namespace System.Diagnostics.Runtime.Tests.IntegrationTests;
 

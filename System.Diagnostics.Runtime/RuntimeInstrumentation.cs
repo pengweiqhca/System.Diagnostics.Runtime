@@ -14,12 +14,13 @@ namespace System.Diagnostics.Runtime;
 public class RuntimeInstrumentation : IDisposable
 {
     private const string
-        LabelAdjustmentReason = "adjustment_reason",
+        LabelAdjustmentReason = "adjustment.reason",
         LabelType = "type",
-        LabelReason = "gc_reason",
-        LabelGcType = "gc_type",
-        LabelHeap = "gc_heap",
-        LabelGeneration = "gc_generation";
+        LabelState = "state",
+        LabelReason = "gc.reason",
+        LabelGcType = "gc.type",
+        LabelHeap = "gc.heap",
+        LabelGeneration = "gc.generation";
 
     private static readonly Dictionary<NativeRuntimeEventSource.ThreadAdjustmentReason, string> AdjustmentReasonToLabel = LabelGenerator.MapEnumToLabelValues<NativeRuntimeEventSource.ThreadAdjustmentReason>();
     private static readonly Dictionary<NativeRuntimeEventSource.GCType, string> GcTypeToLabels = LabelGenerator.MapEnumToLabelValues<NativeRuntimeEventSource.GCType>();
@@ -68,7 +69,7 @@ public class RuntimeInstrumentation : IDisposable
             {
                 parser = new ContentionEventParser();
 
-                disposables.Add(new DotNetEventListener(parser, EventLevel.Informational, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
+                disposables.Add(new DotNetEventListener(parser, EventLevel.Informational));
             }
 
             ContentionInstrumentation(meter, options, new EventConsumer<ContentionEventParser.Events.Info>(parser));
@@ -79,7 +80,7 @@ public class RuntimeInstrumentation : IDisposable
         {
             var parser = new NameResolutionEventParser();
 
-            disposables.Add(new DotNetEventListener(parser, EventLevel.LogAlways, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
+            disposables.Add(new DotNetEventListener(parser, EventLevel.LogAlways));
 
             DnsInstrumentation(meter, options, new EventConsumer<NameResolutionEventParser.Events.CountersV5_0>(parser));
         }
@@ -100,14 +101,14 @@ public class RuntimeInstrumentation : IDisposable
             {
                 parser = new ExceptionEventParser();
 
-                disposables.Add(new DotNetEventListener(parser, EventLevel.Error, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
+                disposables.Add(new DotNetEventListener(parser, EventLevel.Error));
             }
 
             else if (options.EnabledSystemRuntime)
             {
                 runtimeParser = new RuntimeEventParser();
 
-                disposables.Add(new DotNetEventListener(runtimeParser, EventLevel.LogAlways, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
+                disposables.Add(new DotNetEventListener(runtimeParser, EventLevel.LogAlways));
             }
 
             ExceptionsInstrumentation(meter, options,
@@ -125,14 +126,14 @@ public class RuntimeInstrumentation : IDisposable
             {
                 parser = new GcEventParser();
 
-                disposables.Add(new DotNetEventListener(parser, EventLevel.Verbose, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
+                disposables.Add(new DotNetEventListener(parser, EventLevel.Verbose));
             }
 
             if (options.EnabledSystemRuntime && runtimeParser == null)
             {
                 runtimeParser = new RuntimeEventParser();
 
-                disposables.Add(new DotNetEventListener(runtimeParser, EventLevel.LogAlways, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
+                disposables.Add(new DotNetEventListener(runtimeParser, EventLevel.LogAlways));
             }
 
             GcInstrumentation(meter, options,
@@ -159,7 +160,7 @@ public class RuntimeInstrumentation : IDisposable
         {
             var parser = new SocketsEventParser();
 
-            disposables.Add(new DotNetEventListener(parser, EventLevel.LogAlways, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
+            disposables.Add(new DotNetEventListener(parser, EventLevel.LogAlways));
 
             SocketsInstrumentation(meter, options, new EventConsumer<SocketsEventParser.Events.CountersV5_0>(parser));
         }
@@ -172,7 +173,7 @@ public class RuntimeInstrumentation : IDisposable
             {
                 parser = new ThreadPoolEventParser();
 
-                disposables.Add(new DotNetEventListener(parser, EventLevel.Informational, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
+                disposables.Add(new DotNetEventListener(parser, EventLevel.Informational));
             }
 #else
             ThreadPoolSchedulingParser? schedulingParser = null;
@@ -182,7 +183,7 @@ public class RuntimeInstrumentation : IDisposable
 
                 schedulingParser = new ThreadPoolSchedulingParser();
 
-                disposables.Add(new DotNetEventListener(schedulingParser, EventLevel.Verbose, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
+                disposables.Add(new DotNetEventListener(schedulingParser, EventLevel.Verbose));
             }
 #endif
             ThreadingInstrumentation(meter, options,
@@ -507,8 +508,8 @@ public class RuntimeInstrumentation : IDisposable
 
         return new[]
         {
-            CreateMeasurement(process.UserProcessorTime.TotalSeconds, "state", "user"),
-            CreateMeasurement(process.PrivilegedProcessorTime.TotalSeconds, "state", "system")
+            CreateMeasurement(process.UserProcessorTime.TotalSeconds, LabelState, "user"),
+            CreateMeasurement(process.PrivilegedProcessorTime.TotalSeconds, LabelState, "system")
         };
     }
 #if NET6_0_OR_GREATER

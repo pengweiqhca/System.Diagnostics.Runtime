@@ -16,7 +16,7 @@ public class SimulateController : ControllerBase
         bool simulateAlloc = true,
         bool simulateJit = true,
         bool simulateException = true,
-        bool simulateBlocking = false,
+        bool simulateBlocking = true,
         bool simulateOutgoingNetwork = true)
     {
         await Simulate.Invoke(simulateAlloc, simulateJit, simulateException, simulateBlocking,

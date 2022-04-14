@@ -35,6 +35,6 @@ Task.Run(async () =>
     }
 });
 
-Console.WriteLine("Presse ENTER to exit...");
+Console.WriteLine("Press ENTER to exit...");
 
 Console.ReadLine();

@@ -1,16 +1,16 @@
-﻿﻿﻿﻿﻿﻿﻿# Metrics exposed
+﻿﻿﻿﻿﻿﻿﻿﻿# Metrics exposed
 
 > ☑️ Need set `EnabledNativeRuntime = true`
 
 | Category | Name                                             | Type    | Unit                                                  | Description                                                                                                                      | Labels | net471 | netcoreapp3.1 | net6.0 |
 | -----|--------------------------------------------------| --------- | ---------------------------------------------------------------------------------------------- |----------------------------------------------------------------------------------------------------------------------------------| --------------- | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- |
 | assembly   | `assembly.count`                                 | `Gauge` |      | Number of Assemblies Loaded                                                                                                      |        | ✅ | ✅ | ✅ |
-| contention | `lock.contention.total`                          | Counter | | The number of locks contended                                                                                                    | |  | ✅ | ✅ |
+| contention | `lock.contention.total`                          | Counter | | The number of locks contended                                                                                                    | | ☑️ | ✅ | ✅ |
 | contention | `lock.contention.time.total`                     | Counter | | The total amount of time spent contending locks                                                                                  |  | ☑️ | ☑️ | ☑️ |
 | dns        | `dns.requested.total`                            | Counter | | The total number of dns lookup requests                                                                                          | |  | | ✅ |
 | dns        | `dns.current.count`                              | Gauge | | The total number of current dns lookups                                                                                          | |  |  | ✅ |
 | dns        | `dns.duration.total`                             | Counter | ms | The sum of dns lookup durations                                                                                                  | |  |  | ✅ |
-| exception  | `exception.total`                                | Counter | | Count of exceptions thrown                                                                                                       | |  | ☑️ | ☑️ |
+| exception  | `exception.total`                                | Counter | | Count of exceptions thrown                                                                                                       | |  | ✅ | ️✅ |
 | exception  | `exception.total`                                | Counter |  | Count of exceptions thrown, broken down by type                                                                                  | type | ☑️ | ☑️ | ☑️ |
 | gc         | `gc.allocated.total`                             | Counter | B | Allocation bytes since process start                                                                                             | |  | ✅ | ✅ |
 | gc | `gc.allocated.total` | Counter | B | Allocation bytes since process start | gc.heap | ☑️ | ☑️ | ☑️ |

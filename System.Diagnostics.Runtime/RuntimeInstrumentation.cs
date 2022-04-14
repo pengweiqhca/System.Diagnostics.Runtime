@@ -41,36 +41,34 @@ public class RuntimeInstrumentation : IDisposable
 #if NETCOREAPP
         RuntimeEventParser? runtimeParser = null;
 #else
-        EtwParser? etlParser = null;
+        EtwParser? etwParser = null;
 
-        void CreateEtlParser()
+        EtwParser? CreateEtwParser()
         {
-            if (etlParser != null || string.IsNullOrWhiteSpace(options.EtwSessionName)) return;
+            if (etwParser != null || string.IsNullOrWhiteSpace(options.EtwSessionName) ||
+                !options.EnabledNativeRuntime) return etwParser;
 
             try
             {
-                disposables!.Add(etlParser = new EtwParser(options.EtwSessionName!));
+                disposables!.Add(etwParser = new(options.EtwSessionName!));
             }
             catch (Exception ex)
             {
                 RuntimeEventSource.Log.EtlConstructException(ex);
             }
+
+            return etwParser;
         }
 #endif
         if (options.IsContentionEnabled)
         {
 #if NETFRAMEWORK
-            CreateEtlParser();
-
-            ContentionInstrumentation(meter, options, new EventConsumer<ContentionEventParser.Events.Info>(etlParser));
+            ContentionInstrumentation(meter, options, new EventConsumer<ContentionEventParser.Events.Info>(CreateEtwParser()));
 #else
             ContentionEventParser? parser = null;
-            if (options.EnabledNativeRuntime)
-            {
-                parser = new ContentionEventParser();
 
-                disposables.Add(new DotNetEventListener(parser, EventLevel.Informational));
-            }
+            if (options.EnabledNativeRuntime)
+                disposables.Add(new DotNetEventListener(parser = new(), EventLevel.Informational));
 
             ContentionInstrumentation(meter, options, new EventConsumer<ContentionEventParser.Events.Info>(parser));
 #endif
@@ -88,28 +86,15 @@ public class RuntimeInstrumentation : IDisposable
         if (options.IsExceptionsEnabled)
         {
 #if NETFRAMEWORK
-            if (options.EnabledNativeRuntime)
-            {
-                CreateEtlParser();
-
-                ExceptionsInstrumentation(meter, options,
-                    new EventConsumer<ExceptionEventParser.Events.Error>(etlParser));
-            }
+            ExceptionsInstrumentation(meter, options,
+                new EventConsumer<ExceptionEventParser.Events.Error>(CreateEtwParser()));
 #else
             ExceptionEventParser? parser = null;
+
             if (options.EnabledNativeRuntime)
-            {
-                parser = new ExceptionEventParser();
-
-                disposables.Add(new DotNetEventListener(parser, EventLevel.Error));
-            }
-
+                disposables.Add(new DotNetEventListener(parser = new(), EventLevel.Error));
             else if (options.EnabledSystemRuntime)
-            {
-                runtimeParser = new RuntimeEventParser();
-
-                disposables.Add(new DotNetEventListener(runtimeParser, EventLevel.LogAlways));
-            }
+                disposables.Add(new DotNetEventListener(runtimeParser = new(), EventLevel.LogAlways));
 
             ExceptionsInstrumentation(meter, options,
                 new EventConsumer<RuntimeEventParser.Events.CountersV3_0>(runtimeParser),
@@ -123,18 +108,10 @@ public class RuntimeInstrumentation : IDisposable
             GcEventParser? parser = null;
 
             if (options.EnabledNativeRuntime)
-            {
-                parser = new GcEventParser();
-
-                disposables.Add(new DotNetEventListener(parser, EventLevel.Verbose));
-            }
+                disposables.Add(new DotNetEventListener(parser = new(), EventLevel.Verbose));
 
             if (options.EnabledSystemRuntime && runtimeParser == null)
-            {
-                runtimeParser = new RuntimeEventParser();
-
-                disposables.Add(new DotNetEventListener(runtimeParser, EventLevel.LogAlways));
-            }
+                disposables.Add(new DotNetEventListener(runtimeParser = new(), EventLevel.LogAlways));
 
             GcInstrumentation(meter, options,
 #if NET6_0_OR_GREATER
@@ -144,11 +121,9 @@ public class RuntimeInstrumentation : IDisposable
                 new EventConsumer<GcEventParser.Events.Verbose>(parser),
                 new EventConsumer<GcEventParser.Events.Info>(parser));
 #else
-            if (options.EnabledNativeRuntime) CreateEtlParser();
-
             GcInstrumentation(meter, options,
-                new EventConsumer<GcEventParser.Events.Verbose>(etlParser),
-                new EventConsumer<GcEventParser.Events.Info>(etlParser));
+                new EventConsumer<GcEventParser.Events.Verbose>(CreateEtwParser()),
+                new EventConsumer<GcEventParser.Events.Info>(CreateEtwParser()));
 #endif
         }
 #if NET6_0_OR_GREATER
@@ -169,27 +144,19 @@ public class RuntimeInstrumentation : IDisposable
         {
 #if NETCOREAPP
             ThreadPoolEventParser? parser = null;
-            if (options.EnabledNativeRuntime)
-            {
-                parser = new ThreadPoolEventParser();
 
-                disposables.Add(new DotNetEventListener(parser, EventLevel.Informational));
-            }
+            if (options.EnabledNativeRuntime)
+                disposables.Add(new DotNetEventListener(parser = new(), EventLevel.Informational));
 #else
             ThreadPoolSchedulingParser? schedulingParser = null;
+
             if (options.EnabledNativeRuntime)
-            {
-                CreateEtlParser();
-
-                schedulingParser = new ThreadPoolSchedulingParser();
-
-                disposables.Add(new DotNetEventListener(schedulingParser, EventLevel.Verbose));
-            }
+                disposables.Add(new DotNetEventListener(schedulingParser = new(), EventLevel.Verbose));
 #endif
             ThreadingInstrumentation(meter, options,
 #if NETFRAMEWORK
                 new EventConsumer<ThreadPoolSchedulingParser.Events.Verbose>(schedulingParser),
-                new EventConsumer<ThreadPoolEventParser.Events.Info>(etlParser));
+                new EventConsumer<ThreadPoolEventParser.Events.Info>(CreateEtwParser()));
 #else
                 new EventConsumer<ThreadPoolEventParser.Events.Info>(parser));
 #endif

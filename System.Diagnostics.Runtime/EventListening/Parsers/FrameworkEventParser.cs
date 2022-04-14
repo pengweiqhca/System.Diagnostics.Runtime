@@ -3,15 +3,14 @@ using System.Diagnostics.Tracing;
 
 namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
-public class ThreadPoolSchedulingParser : IEventParser<ThreadPoolSchedulingParser>, ThreadPoolSchedulingParser.Events.Verbose
+public class FrameworkEventParser : IEventParser<FrameworkEventParser>, FrameworkEventParser.Events.Verbose
 {
     public event Action? Enqueue;
     public event Action? Dequeue;
 
     public string EventSourceName => FrameworkEventSource.Name;
-    public EventKeywords Keywords => (EventKeywords)(FrameworkEventSource.Keywords.ThreadPool);
-#if NETFRAMEWORK
-#endif
+    public EventKeywords Keywords => (EventKeywords)FrameworkEventSource.Keywords.ThreadPool;
+
     public void ProcessEvent(EventWrittenEventArgs e)
     {
         switch (e.EventId)

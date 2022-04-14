@@ -37,43 +37,52 @@ public class RuntimeInstrumentation : IDisposable
 
         if (options.IsAssembliesEnabled) AssembliesInstrumentation(meter, options);
 #if NETCOREAPP
-        RuntimeEventParser? runtimeParser = null;
-#else
-        EtlParser? etlParser = null;
+        NativeRuntimeEventParser? nativeRuntimeParser = null;
+        SystemRuntimeEventParser? systemRuntimeParser = null;
 
-        void CreateEtlParser()
+        NativeRuntimeEventParser? CreateNativeRuntimeEventParser()
         {
-            if (etlParser != null) return;
+            if (!options.EnabledNativeRuntime) return null;
 
-            if (string.IsNullOrWhiteSpace(options.EtwSessionName))
-                throw new ArgumentException("If EnabledNativeRuntime is true, EtwSessionName must have value.");
+            if (nativeRuntimeParser == null)
+                disposables.Add(new DotNetEventListener(nativeRuntimeParser = new(), EventLevel.Informational));
+
+            return nativeRuntimeParser;
+        }
+
+        SystemRuntimeEventParser CreateSystemRuntimeEventParser()
+        {
+            if (systemRuntimeParser == null)
+                disposables.Add(new DotNetEventListener(systemRuntimeParser = new(), EventLevel.LogAlways));
+
+            return systemRuntimeParser;
+        }
+#else
+        EtwParser? etwParser = null;
+
+        EtwParser? CreateEtwParser()
+        {
+            if (etwParser != null || string.IsNullOrWhiteSpace(options.EtwSessionName) ||
+                !options.EnabledNativeRuntime) return etwParser;
 
             try
             {
-                disposables!.Add(etlParser = new EtlParser(options.EtwSessionName!));
+                disposables.Add(etwParser = new EtwParser(options.EtwSessionName!));
             }
             catch (Exception ex)
             {
                 RuntimeEventSource.Log.EtlConstructException(ex);
             }
+
+            return etwParser;
         }
 #endif
         if (options.IsContentionEnabled)
         {
 #if NETFRAMEWORK
-            CreateEtlParser();
-
-            ContentionInstrumentation(meter, options, new EventConsumer<ContentionEventParser.Events.Info>(etlParser));
+            ContentionInstrumentation(meter, options, CreateEtwParser());
 #else
-            ContentionEventParser? parser = null;
-            if (options.EnabledNativeRuntime)
-            {
-                parser = new ContentionEventParser();
-
-                disposables.Add(new DotNetEventListener(parser, EventLevel.Informational, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
-            }
-
-            ContentionInstrumentation(meter, options, new EventConsumer<ContentionEventParser.Events.Info>(parser));
+            ContentionInstrumentation(meter, options, CreateNativeRuntimeEventParser());
 #endif
         }
 #if NET6_0_OR_GREATER
@@ -81,75 +90,31 @@ public class RuntimeInstrumentation : IDisposable
         {
             var parser = new NameResolutionEventParser();
 
-            disposables.Add(new DotNetEventListener(parser, EventLevel.LogAlways, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
+            disposables.Add(new DotNetEventListener(parser, EventLevel.LogAlways));
 
-            DnsInstrumentation(meter, options, new EventConsumer<NameResolutionEventParser.Events.CountersV5_0>(parser));
+            DnsInstrumentation(meter, options, parser);
         }
 #endif
         if (options.IsExceptionsEnabled)
         {
 #if NETFRAMEWORK
-            if (options.EnabledNativeRuntime)
-            {
-                CreateEtlParser();
-
-                ExceptionsInstrumentation(meter, options,
-                    new EventConsumer<ExceptionEventParser.Events.Error>(etlParser));
-            }
+            ExceptionsInstrumentation(meter, options, CreateEtwParser());
 #else
-            ExceptionEventParser? parser = null;
-            if (options.EnabledNativeRuntime)
-            {
-                parser = new ExceptionEventParser();
-
-                disposables.Add(new DotNetEventListener(parser, EventLevel.Error, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
-            }
-
-            else if (options.EnabledSystemRuntime)
-            {
-                runtimeParser = new RuntimeEventParser();
-
-                disposables.Add(new DotNetEventListener(runtimeParser, EventLevel.LogAlways, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
-            }
-
-            ExceptionsInstrumentation(meter, options,
-                new EventConsumer<RuntimeEventParser.Events.CountersV3_0>(runtimeParser),
-                new EventConsumer<ExceptionEventParser.Events.Error>(parser));
+            ExceptionsInstrumentation(meter, options, CreateSystemRuntimeEventParser(), CreateNativeRuntimeEventParser());
 #endif
         }
 
         if (options.IsGcEnabled)
         {
 #if NETCOREAPP
-            GcEventParser? parser = null;
-
-            if (options.EnabledNativeRuntime)
-            {
-                parser = new GcEventParser();
-
-                disposables.Add(new DotNetEventListener(parser, EventLevel.Verbose, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
-            }
-
-            if (options.EnabledSystemRuntime && runtimeParser == null)
-            {
-                runtimeParser = new RuntimeEventParser();
-
-                disposables.Add(new DotNetEventListener(runtimeParser, EventLevel.LogAlways, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
-            }
-
             GcInstrumentation(meter, options,
 #if NET6_0_OR_GREATER
-                new EventConsumer<RuntimeEventParser.Events.CountersV5_0>(runtimeParser),
+                CreateSystemRuntimeEventParser(),
 #endif
-                new EventConsumer<RuntimeEventParser.Events.CountersV3_0>(runtimeParser),
-                new EventConsumer<GcEventParser.Events.Verbose>(parser),
-                new EventConsumer<GcEventParser.Events.Info>(parser));
+                CreateSystemRuntimeEventParser(),
+                CreateNativeRuntimeEventParser(), CreateNativeRuntimeEventParser());
 #else
-            if (options.EnabledNativeRuntime) CreateEtlParser();
-
-            GcInstrumentation(meter, options,
-                new EventConsumer<GcEventParser.Events.Verbose>(etlParser),
-                new EventConsumer<GcEventParser.Events.Info>(etlParser));
+            GcInstrumentation(meter, options, CreateEtwParser(), CreateEtwParser());
 #endif
         }
 #if NET6_0_OR_GREATER
@@ -161,38 +126,24 @@ public class RuntimeInstrumentation : IDisposable
         {
             var parser = new SocketsEventParser();
 
-            disposables.Add(new DotNetEventListener(parser, EventLevel.LogAlways, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
+            disposables.Add(new DotNetEventListener(parser, EventLevel.LogAlways));
 
-            SocketsInstrumentation(meter, options, new EventConsumer<SocketsEventParser.Events.CountersV5_0>(parser));
+            SocketsInstrumentation(meter, options, parser);
         }
 #endif
         if (options.IsThreadingEnabled)
         {
-#if NETCOREAPP
-            ThreadPoolEventParser? parser = null;
+#if NETFRAMEWORK
+            FrameworkEventParser? frameworkParser = null;
+
             if (options.EnabledNativeRuntime)
-            {
-                parser = new ThreadPoolEventParser();
-
-                disposables.Add(new DotNetEventListener(parser, EventLevel.Informational, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
-            }
-#else
-            ThreadPoolSchedulingParser? schedulingParser = null;
-            if (options.EnabledNativeRuntime)
-            {
-                CreateEtlParser();
-
-                schedulingParser = new ThreadPoolSchedulingParser();
-
-                disposables.Add(new DotNetEventListener(schedulingParser, EventLevel.Verbose, DotNetEventListener.GlobalOptions.CreateFrom(meter, options)));
-            }
+                disposables.Add(new DotNetEventListener(frameworkParser = new(), EventLevel.Verbose));
 #endif
             ThreadingInstrumentation(meter, options,
 #if NETFRAMEWORK
-                new EventConsumer<ThreadPoolSchedulingParser.Events.Verbose>(schedulingParser),
-                new EventConsumer<ThreadPoolEventParser.Events.Info>(etlParser));
+                frameworkParser, CreateEtwParser());
 #else
-                new EventConsumer<ThreadPoolEventParser.Events.Info>(parser));
+                CreateNativeRuntimeEventParser());
 #endif
         }
 
@@ -210,71 +161,71 @@ public class RuntimeInstrumentation : IDisposable
         meter.CreateObservableGauge($"{options.MetricPrefix}assembly.count", () => AppDomain.CurrentDomain.GetAssemblies().Length, description: "Number of Assemblies Loaded");
 
     private static void ContentionInstrumentation(Meter meter, RuntimeMetricsOptions options,
-        IConsumes<ContentionEventParser.Events.Info> contentionInfo)
+        NativeEvent.Info? contentionInfo)
     {
 #if NETCOREAPP
         meter.CreateObservableCounter($"{options.MetricPrefix}lock.contention.total", () => Monitor.LockContentionCount, description: "Monitor Lock Contention Count");
 #endif
-        if (!contentionInfo.Enabled) return;
+        if (contentionInfo == null) return;
 
         var contentionSecondsTotal = meter.CreateCounter<double>($"{options.MetricPrefix}lock.contention.time.total", "s", "The total amount of time spent contending locks");
 #if NETFRAMEWORK
         var contentionTotal = meter.CreateCounter<long>($"{options.MetricPrefix}lock.contention.total", description: "Monitor Lock Contention Count");
-        contentionInfo.Events.ContentionEnd += e =>
+        contentionInfo.ContentionEnd += e =>
         {
             contentionSecondsTotal.Add(e.ContentionDuration.TotalSeconds);
 
             contentionTotal.Add(1);
         };
 #else
-        contentionInfo.Events.ContentionEnd += e => contentionSecondsTotal.Add(e.ContentionDuration.TotalSeconds);
+        contentionInfo.ContentionEnd += e => contentionSecondsTotal.Add(e.ContentionDuration.TotalSeconds);
 #endif
     }
 #if NET6_0_OR_GREATER
     private static void DnsInstrumentation(Meter meter, RuntimeMetricsOptions options,
-        IConsumes<NameResolutionEventParser.Events.CountersV5_0> nameResolutionCounters)
+        NameResolutionEventParser.Events.CountersV5_0? nameResolutionCounters)
     {
-        if (!nameResolutionCounters.Enabled) return;
+        if (nameResolutionCounters == null) return;
 
         var dnsLookupsRequested = 0L;
-        nameResolutionCounters.Events.DnsLookupsRequested += e => dnsLookupsRequested = (long)e.Mean;
+        nameResolutionCounters.DnsLookupsRequested += e => dnsLookupsRequested = (long)e.Mean;
         meter.CreateObservableCounter($"{options.MetricPrefix}dns.requested.total",
             () => dnsLookupsRequested,
             description: "The total number of dns lookup requests");
 
         var currentDnsLookups = 0L;
-        nameResolutionCounters.Events.CurrentDnsLookups += e => currentDnsLookups = (long)e.Mean;
+        nameResolutionCounters.CurrentDnsLookups += e => currentDnsLookups = (long)e.Mean;
         meter.CreateObservableGauge($"{options.MetricPrefix}dns.current.count",
             () => currentDnsLookups,
             description: "The total number of current dns lookups");
 
         var dnsLookupsDuration = 0.0;
-        nameResolutionCounters.Events.DnsLookupsDuration += e => dnsLookupsDuration = e.Total;
+        nameResolutionCounters.DnsLookupsDuration += e => dnsLookupsDuration = e.Total;
         meter.CreateObservableCounter($"{options.MetricPrefix}dns.duration.total", () => dnsLookupsDuration, "ms", "The sum of dns lookup durations");
     }
 #endif
     private static void ExceptionsInstrumentation(Meter meter, RuntimeMetricsOptions options,
 #if NETCOREAPP
-        IConsumes<RuntimeEventParser.Events.CountersV3_0> runtimeCounters,
+        SystemRuntimeEventParser.Events.CountersV3_0? runtimeCounters,
 #endif
-        IConsumes<ExceptionEventParser.Events.Error> exceptionError)
+        NativeEvent.Error? exceptionError)
     {
-        if (exceptionError.Enabled)
+        if (exceptionError != null)
         {
             var exceptionCount = meter.CreateCounter<long>(
                 $"{options.MetricPrefix}exception.total",
                 description: "Count of exceptions thrown, broken down by type");
 
-            exceptionError.Events.ExceptionThrown += e => exceptionCount.Add(1, CreateTag(LabelType, e.ExceptionType));
+            exceptionError.ExceptionThrown += e => exceptionCount.Add(1, CreateTag(LabelType, e.ExceptionType));
         }
 #if NETCOREAPP
-        else if (runtimeCounters.Enabled)
+        else if (runtimeCounters != null)
         {
             var exceptionCount = meter.CreateCounter<long>(
                 $"{options.MetricPrefix}exception.total",
                 description: "Count of exceptions thrown");
 
-            runtimeCounters.Events.ExceptionCount += e => exceptionCount.Add((long)e.IncrementedBy);
+            runtimeCounters.ExceptionCount += e => exceptionCount.Add((long)e.IncrementedBy);
         }
         else if (typeof(Exception).GetMethod("GetExceptionCount",
                      BindingFlags.Static | BindingFlags.NonPublic)?.CreateDelegate(typeof(Func<uint>)) is Func<uint> func)
@@ -288,18 +239,17 @@ public class RuntimeInstrumentation : IDisposable
     private static void GcInstrumentation(Meter meter, RuntimeMetricsOptions options,
 #if NETCOREAPP
 #if NET6_0_OR_GREATER
-        IConsumes<RuntimeEventParser.Events.CountersV5_0> runtime5Counters,
+        SystemRuntimeEventParser.Events.CountersV5_0? runtime5Counters,
 #endif
-        IConsumes<RuntimeEventParser.Events.CountersV3_0> runtimeCounters,
+        SystemRuntimeEventParser.Events.CountersV3_0? runtimeCounters,
 #endif
-        IConsumes<GcEventParser.Events.Verbose> gcVerbose,
-        IConsumes<GcEventParser.Events.Info> gcInfo)
+        NativeEvent.Verbose? gcVerbose, NativeEvent.Info? gcInfo)
     {
-        if (gcVerbose.Enabled)
+        if (gcVerbose != null)
         {
             var allocated = meter.CreateCounter<long>($"{options.MetricPrefix}gc.allocated.total", "B", "Allocation bytes since process start");
 
-            gcVerbose.Events.AllocationTick += e => allocated.Add(e.AllocatedBytes, CreateTag(LabelHeap, e.IsLargeObjectHeap ? "loh" : "soh"));
+            gcVerbose.AllocationTick += e => allocated.Add(e.AllocatedBytes, CreateTag(LabelHeap, e.IsLargeObjectHeap ? "loh" : "soh"));
         }
 #if NETCOREAPP
         else
@@ -314,13 +264,13 @@ public class RuntimeInstrumentation : IDisposable
 #endif
         TimeInGc(meter, options, runtimeCounters);
 #endif
-        if (gcInfo.Enabled)
+        if (gcInfo != null)
         {
             var gcCollectionSeconds = meter.CreateHistogram<double>(
                 $"{options.MetricPrefix}gc.collection.time", "ms",
                 "The amount of time spent running garbage collections");
 
-            gcInfo.Events.CollectionComplete += e => gcCollectionSeconds.Record(e.Duration.TotalMilliseconds,
+            gcInfo.CollectionComplete += e => gcCollectionSeconds.Record(e.Duration.TotalMilliseconds,
                 CreateTag(LabelGeneration, GetGenerationToString(e.Generation)),
                 CreateTag(LabelGcType, GcTypeToLabels[e.Type]));
 
@@ -328,18 +278,18 @@ public class RuntimeInstrumentation : IDisposable
                 $"{options.MetricPrefix}gc.pause.time", "ms",
                 "The amount of time execution was paused for garbage collection");
 
-            gcInfo.Events.PauseComplete += e => gcPauseSeconds.Record(e.PauseDuration.TotalMilliseconds);
+            gcInfo.PauseComplete += e => gcPauseSeconds.Record(e.PauseDuration.TotalMilliseconds);
 
             var gcCollections = meter.CreateCounter<int>(
                 $"{options.MetricPrefix}gc.collection.total",
                 description: "Counts the number of garbage collections that have occurred, broken down by generation number and the reason for the collection.");
 
-            gcInfo.Events.CollectionStart += e => gcCollections.Add(1,
+            gcInfo.CollectionStart += e => gcCollections.Add(1,
                 CreateTag(LabelGeneration, GetGenerationToString(e.Generation)),
                 CreateTag(LabelReason, GcReasonToLabels[e.Reason]));
 
-            GcEventParser.Events.HeapStatsEvent stats = default;
-            gcInfo.Events.HeapStats += e => stats = e;
+            NativeEvent.HeapStatsEvent stats = default;
+            gcInfo.HeapStats += e => stats = e;
 
             meter.CreateObservableGauge($"{options.MetricPrefix}gc.heap.size", () => stats == default
                 ? Array.Empty<Measurement<long>>()
@@ -371,7 +321,7 @@ public class RuntimeInstrumentation : IDisposable
                 CreateMeasurement(GC.CollectionCount(2), LabelGeneration, "2")
             }, description: "Counts the number of garbage collections that have occurred");
 #if NETCOREAPP
-            if (runtimeCounters.Enabled)
+            if (runtimeCounters != null)
             {
                 var heapSize = new HeapSize();
 
@@ -390,13 +340,13 @@ public class RuntimeInstrumentation : IDisposable
                         : Array.Empty<Measurement<long>>(),
                     "B", "The current size of all heaps (only updated after a garbage collection)");
 
-                runtimeCounters.Events.Gen0Size += e => heapSize.Gen0SizeBytes = (long)e.Mean;
-                runtimeCounters.Events.Gen1Size += e => heapSize.Gen1SizeBytes = (long)e.Mean;
-                runtimeCounters.Events.Gen2Size += e => heapSize.Gen2SizeBytes = (long)e.Mean;
-                runtimeCounters.Events.LohSize += e => heapSize.LohSizeBytes = (long)e.Mean;
+                runtimeCounters.Gen0Size += e => heapSize.Gen0SizeBytes = (long)e.Mean;
+                runtimeCounters.Gen1Size += e => heapSize.Gen1SizeBytes = (long)e.Mean;
+                runtimeCounters.Gen2Size += e => heapSize.Gen2SizeBytes = (long)e.Mean;
+                runtimeCounters.LohSize += e => heapSize.LohSizeBytes = (long)e.Mean;
 #if NET6_0_OR_GREATER
-                if (runtime5Counters.Enabled)
-                    runtime5Counters.Events.PohSize += e => heapSize.PohSizeBytes = (long)e.Mean;
+                if (runtime5Counters != null)
+                    runtime5Counters.PohSize += e => heapSize.PohSizeBytes = (long)e.Mean;
 #endif
             }
             else if (typeof(GC).GetMethod("GetGenerationSize", BindingFlags.Static | BindingFlags.NonPublic)?
@@ -452,14 +402,14 @@ public class RuntimeInstrumentation : IDisposable
     }
 
     private static void TimeInGc(Meter meter, RuntimeMetricsOptions options,
-        IConsumes<RuntimeEventParser.Events.CountersV3_0> runtimeCounters)
+        SystemRuntimeEventParser.Events.CountersV3_0? runtimeCounters)
     {
         Func<int> timeInGc;
-        if (runtimeCounters.Enabled)
+        if (runtimeCounters != null)
         {
             MeanCounterValue gcPause = default;
 
-            runtimeCounters.Events.TimeInGc += e => gcPause = e;
+            runtimeCounters.TimeInGc += e => gcPause = e;
 
             timeInGc = () => (int)gcPause.Mean;
         }
@@ -515,36 +465,36 @@ public class RuntimeInstrumentation : IDisposable
     }
 #if NET6_0_OR_GREATER
     private static void SocketsInstrumentation(Meter meter, RuntimeMetricsOptions options,
-        IConsumes<SocketsEventParser.Events.CountersV5_0> socketCounters)
+        SocketsEventParser.Events.CountersV5_0? socketCounters)
     {
-        if (!socketCounters.Enabled) return;
+        if (socketCounters == null) return;
 
         var lastEstablishedOutgoing = 0.0;
-        socketCounters.Events.OutgoingConnectionsEstablished += e => lastEstablishedOutgoing = e.Mean;
+        socketCounters.OutgoingConnectionsEstablished += e => lastEstablishedOutgoing = e.Mean;
         meter.CreateObservableCounter($"{options.MetricPrefix}sockets.connections.established.outgoing.total",
             () => lastEstablishedOutgoing,
             description: "The total number of outgoing established TCP connections");
 
         var lastEstablishedIncoming = 0.0;
-        socketCounters.Events.IncomingConnectionsEstablished += e => lastEstablishedIncoming = e.Mean;
+        socketCounters.IncomingConnectionsEstablished += e => lastEstablishedIncoming = e.Mean;
         meter.CreateObservableCounter($"{options.MetricPrefix}sockets.connections.established.incoming.total",
             () => lastEstablishedIncoming,
             description: "The total number of incoming established TCP connections");
 
         var lastReceived = 0.0;
-        socketCounters.Events.BytesReceived += e => lastReceived = e.Mean;
+        socketCounters.BytesReceived += e => lastReceived = e.Mean;
         meter.CreateObservableCounter($"{options.MetricPrefix}sockets.bytes.received.total", () => lastReceived, "B", "The total number of bytes received over the network");
 
         var lastSent = 0.0;
-        socketCounters.Events.BytesSent += e => lastSent = e.Mean;
+        socketCounters.BytesSent += e => lastSent = e.Mean;
         meter.CreateObservableCounter($"{options.MetricPrefix}sockets.bytes.sent.total", () => lastSent, "B", "The total number of bytes sent over the network");
     }
 #endif
     private static void ThreadingInstrumentation(Meter meter, RuntimeMetricsOptions options,
 #if NETFRAMEWORK
-        IConsumes<ThreadPoolSchedulingParser.Events.Verbose> threadPoolSchedulingInfo,
+        FrameworkEventParser.Events.Verbose? frameworkVerbose,
 #endif
-        IConsumes<ThreadPoolEventParser.Events.Info> threadPoolInfo)
+        NativeEvent.Info? threadPoolInfo)
     {
 #if NETCOREAPP
         meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.thread.count", () => ThreadPool.ThreadCount, description: "ThreadPool thread count");
@@ -553,13 +503,13 @@ public class RuntimeInstrumentation : IDisposable
         meter.CreateObservableCounter($"{options.MetricPrefix}threadpool.completed.items.total", () => ThreadPool.CompletedWorkItemCount, description: "ThreadPool completed work item count");
         meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.timer.count", () => Timer.ActiveCount, description: "Number of active timers");
 #else
-        if (threadPoolSchedulingInfo.Enabled)
+        if (frameworkVerbose != null)
         {
             var completedItems = 0L;
             var total = 0L;
 
-            threadPoolSchedulingInfo.Events.Enqueue += () => Interlocked.Increment(ref total);
-            threadPoolSchedulingInfo.Events.Dequeue += () =>
+            frameworkVerbose.Enqueue += () => Interlocked.Increment(ref total);
+            frameworkVerbose.Dequeue += () =>
             {
                 Interlocked.Increment(ref completedItems);
                 if (Interlocked.Read(ref total) > 0) Interlocked.Decrement(ref total);
@@ -569,13 +519,13 @@ public class RuntimeInstrumentation : IDisposable
             meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.queue.length", () => Math.Max(0, total), description: "ThreadPool queue length");
         }
 #endif
-        if (threadPoolInfo.Enabled)
+        if (threadPoolInfo != null)
         {
             var adjustmentsTotal = meter.CreateCounter<int>(
                 $"{options.MetricPrefix}threadpool.adjustments.total",
                 description: "The total number of changes made to the size of the thread pool, labeled by the reason for change");
 
-            threadPoolInfo.Events.ThreadPoolAdjusted += e =>
+            threadPoolInfo.ThreadPoolAdjusted += e =>
                 adjustmentsTotal.Add(1, CreateTag("adjustment_reason", AdjustmentReasonToLabel[e.AdjustmentReason]));
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -583,7 +533,7 @@ public class RuntimeInstrumentation : IDisposable
                 // IO threadpool only exists on windows
 
                 var iocThreads = 0;
-                threadPoolInfo.Events.IoThreadPoolAdjusted += e => iocThreads = (int)e.NumThreads;
+                threadPoolInfo.IoThreadPoolAdjusted += e => iocThreads = (int)e.NumThreads;
 
                 meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.io.thread.count",
                     () => iocThreads,

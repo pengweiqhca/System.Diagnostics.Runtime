@@ -4,7 +4,7 @@ using NUnit.Framework;
 namespace System.Diagnostics.Runtime.Tests.EventListening.Parsers;
 
 [TestFixture]
-public class ThreadPoolSchedulingParserTest : EventListenerIntegrationTestBase<ThreadPoolSchedulingParser>
+public class ThreadPoolSchedulingParserTest : EventListenerIntegrationTestBase<FrameworkEventParser>
 {
     [Test]
     public void TestEvent()
@@ -22,5 +22,5 @@ public class ThreadPoolSchedulingParserTest : EventListenerIntegrationTestBase<T
         Assert.IsTrue(countdown2.Wait(TimeSpan.FromSeconds(2)));
     }
 
-    protected override ThreadPoolSchedulingParser CreateListener() => new();
+    protected override FrameworkEventParser CreateListener() => new();
 }

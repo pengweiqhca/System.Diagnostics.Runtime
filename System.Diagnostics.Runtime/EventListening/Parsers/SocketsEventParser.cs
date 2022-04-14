@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.Runtime.EventListening.Sources;
+﻿#if NET6_0_OR_GREATER
+using System.Diagnostics.Runtime.EventListening.Sources;
 
 namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
@@ -7,7 +8,6 @@ namespace System.Diagnostics.Runtime.EventListening.Parsers;
 /// </summary>
 public class SocketsEventParser : EventCounterParserBase<SocketsEventParser>, SocketsEventParser.Events.CountersV5_0
 {
-
 #pragma warning disable CS0067
     [CounterName("outgoing-connections-established")]
     public event Action<MeanCounterValue>? OutgoingConnectionsEstablished;
@@ -43,3 +43,4 @@ public class SocketsEventParser : EventCounterParserBase<SocketsEventParser>, So
         }
     }
 }
+#endif

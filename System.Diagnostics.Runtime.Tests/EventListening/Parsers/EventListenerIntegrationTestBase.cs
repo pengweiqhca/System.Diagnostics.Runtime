@@ -16,7 +16,7 @@ public abstract class EventListenerIntegrationTestBase<TEventListener>
     {
         Parser = CreateListener();
 
-        _eventListener = new DotNetEventListener(Parser, EventLevel.LogAlways, new());
+        _eventListener = new DotNetEventListener(Parser, EventLevel.LogAlways);
     }
 
     [TearDown]

@@ -11,11 +11,6 @@
         public string MetricPrefix { get; set; } = "process.runtime.dotnet.";
 
         /// <summary>
-        /// Gets or sets a value indicating whether enable debugging metrics.
-        /// </summary>
-        public bool EnabledDebuggingMetrics { get; set; }
-
-        /// <summary>
         /// Gets or sets a value indicating whether assembly metrics should be collected.
         /// </summary>
         public bool? AssembliesEnabled { get; set; }

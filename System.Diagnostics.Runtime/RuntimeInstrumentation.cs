@@ -47,8 +47,7 @@ public class RuntimeInstrumentation : IDisposable
             if (!options.EnabledNativeRuntime) return null;
 
             if (nativeRuntimeParser == null)
-                // When EventLevel is Verbose, GC collection event will not trigger, why?
-                disposables.Add(new DotNetEventListener(nativeRuntimeParser = new(), EventLevel.Informational));
+                disposables.Add(new DotNetEventListener(nativeRuntimeParser = new(), EventLevel.Verbose));
 
             return nativeRuntimeParser;
         }
@@ -115,7 +114,7 @@ public class RuntimeInstrumentation : IDisposable
                 CreateSystemRuntimeEventParser(),
 #endif
                 CreateSystemRuntimeEventParser(),
-                null, // TODO Need fix
+                CreateNativeRuntimeEventParser(),
                 CreateNativeRuntimeEventParser());
 #else
             GcInstrumentation(meter, options, CreateEtwParser(), CreateEtwParser());

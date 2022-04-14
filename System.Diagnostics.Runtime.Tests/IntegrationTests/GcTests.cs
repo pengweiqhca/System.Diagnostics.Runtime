@@ -215,7 +215,7 @@ internal class Given_Native_Runtime_Are_Available_For_GcStats : IntegrationTestB
             }, $"{Options.MetricPrefix}gc.collection.time",
             $"{Options.MetricPrefix}gc.collection.total",
             $"{Options.MetricPrefix}gc.pause.time");
-
+#if NETFRAMEWORK
     [Test]
     public Task When_100kb_of_small_objects_are_allocated_then_the_allocated_bytes_counter_is_increased() =>
         InstrumentTest.Assert(() =>
@@ -239,7 +239,7 @@ internal class Given_Native_Runtime_Are_Available_For_GcStats : IntegrationTestB
                 }
             }, measurements => Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.allocated.total", "gc.heap", "loh"), Is.GreaterThanOrEqualTo(100_0000).After(2_000, 10)),
             $"{Options.MetricPrefix}gc.allocated.total");
-
+#endif
     private class FinalizableTest
     {
         ~FinalizableTest()

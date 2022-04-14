@@ -31,9 +31,7 @@ internal sealed class DotNetEventListener : EventListener
         var args = new Dictionary<string, string?>();
 
         if (listener is IEventCounterListener counterListener)
-        {
             args["EventCounterIntervalSec"] = counterListener.RefreshIntervalSeconds.ToString();
-        }
 
         return args;
     }

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.Runtime.EventListening.Sources;
+﻿#if NET6_0_OR_GREATER
+using System.Diagnostics.Runtime.EventListening.Sources;
 
 namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
@@ -8,14 +9,11 @@ namespace System.Diagnostics.Runtime.EventListening.Parsers;
 public class NameResolutionEventParser : EventCounterParserBase<NameResolutionEventParser>, NameResolutionEventParser.Events.CountersV5_0
 {
 #pragma warning disable CS0067
-    [CounterName("dns-lookups-requested")]
-    public event Action<MeanCounterValue>? DnsLookupsRequested;
+    [CounterName("dns-lookups-requested")] public event Action<MeanCounterValue>? DnsLookupsRequested;
 
-    [CounterName("current-dns-lookups")]
-    public event Action<MeanCounterValue>? CurrentDnsLookups;
+    [CounterName("current-dns-lookups")] public event Action<MeanCounterValue>? CurrentDnsLookups;
 
-    [CounterName("dns-lookups-duration")]
-    public event Action<MeanCounterValue>? DnsLookupsDuration;
+    [CounterName("dns-lookups-duration")] public event Action<MeanCounterValue>? DnsLookupsDuration;
 #pragma warning restore CS0067
 
     public override string EventSourceName => NameResolutionEventSource.Name;
@@ -30,3 +28,4 @@ public class NameResolutionEventParser : EventCounterParserBase<NameResolutionEv
         }
     }
 }
+#endif

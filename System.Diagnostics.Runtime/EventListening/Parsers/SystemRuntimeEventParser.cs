@@ -1,15 +1,17 @@
-﻿using System.Diagnostics.Runtime.EventListening.Sources;
+﻿#if NETCOREAPP
+using System.Diagnostics.Runtime.EventListening.Sources;
 
 namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
 //https://github.com/dotnet/runtime/blob/main/src/libraries/System.Private.CoreLib/src/System/Diagnostics/Tracing/RuntimeEventSource.cs#L78
-public class RuntimeEventParser : EventCounterParserBase<RuntimeEventParser>,
-    RuntimeEventParser.Events.CountersV3_0,
-    RuntimeEventParser.Events.CountersV5_0
+public class SystemRuntimeEventParser : EventCounterParserBase<SystemRuntimeEventParser>,
+    SystemRuntimeEventParser.Events.CountersV3_0,
+    SystemRuntimeEventParser.Events.CountersV5_0
 {
 #pragma warning disable CS0067
     [CounterName("cpu-usage")]
     public event Action<MeanCounterValue>? CpuUsage;
+
     [CounterName("working-set")]
     public event Action<MeanCounterValue>? WorkingSet;
 
@@ -117,3 +119,4 @@ public class RuntimeEventParser : EventCounterParserBase<RuntimeEventParser>,
         }
     }
 }
+#endif

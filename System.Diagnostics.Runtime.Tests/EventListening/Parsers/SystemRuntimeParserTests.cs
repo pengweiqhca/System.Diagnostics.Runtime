@@ -5,7 +5,7 @@ using NUnit.Framework;
 namespace System.Diagnostics.Runtime.Tests.EventListening.Parsers;
 
 [TestFixture]
-public class SystemRuntimeParserTests : EventListenerIntegrationTestBase<RuntimeEventParser>
+public class SystemRuntimeParserTests : EventListenerIntegrationTestBase<SystemRuntimeEventParser>
 {
     [Test]
     public void TestEvent()
@@ -20,6 +20,6 @@ public class SystemRuntimeParserTests : EventListenerIntegrationTestBase<Runtime
         Assert.IsTrue(resetEvent.WaitOne(TimeSpan.FromSeconds(2)));
     }
 
-    protected override RuntimeEventParser CreateListener() => new();
+    protected override SystemRuntimeEventParser CreateListener() => new();
 }
 #endif

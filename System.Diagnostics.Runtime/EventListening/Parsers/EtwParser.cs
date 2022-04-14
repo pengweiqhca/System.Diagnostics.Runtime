@@ -10,12 +10,7 @@ namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
 //https://github.com/microsoft/perfview/blob/main/documentation/TraceEvent/TraceEventProgrammersGuide.md
 //https://labs.criteo.com/2018/07/grab-etw-session-providers-and-events/
-public class EtwParser : IDisposable,
-    ContentionEventParser.Events.Info,
-    ExceptionEventParser.Events.Error,
-    GcEventParser.Events.Info,
-    GcEventParser.Events.Verbose,
-    ThreadPoolEventParser.Events.Info
+public class EtwParser : IDisposable, NativeEvent.Error, NativeEvent.Info, NativeEvent.Verbose
 {
     // flags representing the "Garbage Collection" + "Preparation for garbage collection" pause reasons
     private const GCSuspendEEReason SuspendGcReasons = GCSuspendEEReason.SuspendForGC | GCSuspendEEReason.SuspendForGCPrep;
@@ -152,15 +147,15 @@ public class EtwParser : IDisposable,
         }, TaskCreationOptions.LongRunning);
     }
 
-    public event Action<ContentionEventParser.Events.ContentionEndEvent>? ContentionEnd;
-    public event Action<ExceptionEventParser.Events.ExceptionThrownEvent>? ExceptionThrown;
-    public event Action<GcEventParser.Events.HeapStatsEvent>? HeapStats;
-    public event Action<GcEventParser.Events.PauseCompleteEvent>? PauseComplete;
-    public event Action<GcEventParser.Events.CollectionStartEvent>? CollectionStart;
-    public event Action<GcEventParser.Events.CollectionCompleteEvent>? CollectionComplete;
-    public event Action<GcEventParser.Events.AllocationTickEvent>? AllocationTick;
-    public event Action<ThreadPoolEventParser.Events.ThreadPoolAdjustedEvent>? ThreadPoolAdjusted;
-    public event Action<ThreadPoolEventParser.Events.IoThreadPoolAdjustedEvent>? IoThreadPoolAdjusted;
+    public event Action<NativeEvent.ContentionEndEvent>? ContentionEnd;
+    public event Action<NativeEvent.ExceptionThrownEvent>? ExceptionThrown;
+    public event Action<NativeEvent.HeapStatsEvent>? HeapStats;
+    public event Action<NativeEvent.PauseCompleteEvent>? PauseComplete;
+    public event Action<NativeEvent.CollectionStartEvent>? CollectionStart;
+    public event Action<NativeEvent.CollectionCompleteEvent>? CollectionComplete;
+    public event Action<NativeEvent.AllocationTickEvent>? AllocationTick;
+    public event Action<NativeEvent.ThreadPoolAdjustedEvent>? ThreadPoolAdjusted;
+    public event Action<NativeEvent.IoThreadPoolAdjustedEvent>? IoThreadPoolAdjusted;
 
     private void ContentionStart(ContentionStartTraceData data)
     {

@@ -39,7 +39,27 @@ public class RuntimeInstrumentation : IDisposable
 
         if (options.IsAssembliesEnabled) AssembliesInstrumentation(meter, options);
 #if NETCOREAPP
-        RuntimeEventParser? runtimeParser = null;
+        NativeRuntimeEventParser? nativeRuntimeParser = null;
+        SystemRuntimeEventParser? systemRuntimeParser = null;
+
+        NativeRuntimeEventParser? CreateNativeRuntimeEventParser()
+        {
+            if (!options.EnabledNativeRuntime) return null;
+
+            if (nativeRuntimeParser == null)
+                // When EventLevel is Verbose, GC collection event will not trigger, why?
+                disposables.Add(new DotNetEventListener(nativeRuntimeParser = new(), EventLevel.Informational));
+
+            return nativeRuntimeParser;
+        }
+
+        SystemRuntimeEventParser CreateSystemRuntimeEventParser()
+        {
+            if (systemRuntimeParser == null)
+                disposables.Add(new DotNetEventListener(systemRuntimeParser = new(), EventLevel.LogAlways));
+
+            return systemRuntimeParser;
+        }
 #else
         EtwParser? etwParser = null;
 
@@ -65,12 +85,7 @@ public class RuntimeInstrumentation : IDisposable
 #if NETFRAMEWORK
             ContentionInstrumentation(meter, options, CreateEtwParser());
 #else
-            ContentionEventParser? parser = null;
-
-            if (options.EnabledNativeRuntime)
-                disposables.Add(new DotNetEventListener(parser = new(), EventLevel.Informational));
-
-            ContentionInstrumentation(meter, options, parser);
+            ContentionInstrumentation(meter, options, CreateNativeRuntimeEventParser());
 #endif
         }
 #if NET6_0_OR_GREATER
@@ -88,33 +103,20 @@ public class RuntimeInstrumentation : IDisposable
 #if NETFRAMEWORK
             ExceptionsInstrumentation(meter, options, CreateEtwParser());
 #else
-            ExceptionEventParser? parser = null;
-
-            if (options.EnabledNativeRuntime)
-                disposables.Add(new DotNetEventListener(parser = new(), EventLevel.Error));
-            else if (options.EnabledSystemRuntime)
-                disposables.Add(new DotNetEventListener(runtimeParser = new(), EventLevel.LogAlways));
-
-            ExceptionsInstrumentation(meter, options, runtimeParser, parser);
+            ExceptionsInstrumentation(meter, options, CreateSystemRuntimeEventParser(), CreateNativeRuntimeEventParser());
 #endif
         }
 
         if (options.IsGcEnabled)
         {
 #if NETCOREAPP
-            GcEventParser? parser = null;
-
-            if (options.EnabledNativeRuntime)
-                disposables.Add(new DotNetEventListener(parser = new(), EventLevel.Verbose));
-
-            if (options.EnabledSystemRuntime && runtimeParser == null)
-                disposables.Add(new DotNetEventListener(runtimeParser = new(), EventLevel.LogAlways));
-
             GcInstrumentation(meter, options,
 #if NET6_0_OR_GREATER
-                runtimeParser,
+                CreateSystemRuntimeEventParser(),
 #endif
-                runtimeParser, parser, parser);
+                CreateSystemRuntimeEventParser(),
+                null, // TODO Need fix
+                CreateNativeRuntimeEventParser());
 #else
             GcInstrumentation(meter, options, CreateEtwParser(), CreateEtwParser());
 #endif
@@ -135,23 +137,17 @@ public class RuntimeInstrumentation : IDisposable
 #endif
         if (options.IsThreadingEnabled)
         {
-#if NETCOREAPP
-            ThreadPoolEventParser? parser = null;
+#if NETFRAMEWORK
+            FrameworkEventParser? frameworkParser = null;
 
             if (options.EnabledNativeRuntime)
-                disposables.Add(new DotNetEventListener(parser = new(), EventLevel.Informational));
-#else
-            ThreadPoolSchedulingParser? schedulingParser = null;
-
-            if (options.EnabledNativeRuntime)
-                disposables.Add(new DotNetEventListener(schedulingParser = new(), EventLevel.Verbose));
+                disposables.Add(new DotNetEventListener(frameworkParser = new(), EventLevel.Verbose));
 #endif
             ThreadingInstrumentation(meter, options,
 #if NETFRAMEWORK
-                schedulingParser,
-                CreateEtwParser());
+                frameworkParser, CreateEtwParser());
 #else
-                parser);
+                CreateNativeRuntimeEventParser());
 #endif
         }
 
@@ -169,7 +165,7 @@ public class RuntimeInstrumentation : IDisposable
         meter.CreateObservableGauge($"{options.MetricPrefix}assembly.count", () => AppDomain.CurrentDomain.GetAssemblies().Length, description: "Number of Assemblies Loaded");
 
     private static void ContentionInstrumentation(Meter meter, RuntimeMetricsOptions options,
-        ContentionEventParser.Events.Info? contentionInfo)
+        NativeEvent.Info? contentionInfo)
     {
 #if NETCOREAPP
         meter.CreateObservableCounter($"{options.MetricPrefix}lock.contention.total", () => Monitor.LockContentionCount, description: "Monitor Lock Contention Count");
@@ -214,9 +210,9 @@ public class RuntimeInstrumentation : IDisposable
 #endif
     private static void ExceptionsInstrumentation(Meter meter, RuntimeMetricsOptions options,
 #if NETCOREAPP
-        RuntimeEventParser.Events.CountersV3_0? runtimeCounters,
+        SystemRuntimeEventParser.Events.CountersV3_0? runtimeCounters,
 #endif
-        ExceptionEventParser.Events.Error? exceptionError)
+        NativeEvent.Error? exceptionError)
     {
         if (exceptionError != null)
         {
@@ -247,12 +243,11 @@ public class RuntimeInstrumentation : IDisposable
     private static void GcInstrumentation(Meter meter, RuntimeMetricsOptions options,
 #if NETCOREAPP
 #if NET6_0_OR_GREATER
-        RuntimeEventParser.Events.CountersV5_0? runtime5Counters,
+        SystemRuntimeEventParser.Events.CountersV5_0? runtime5Counters,
 #endif
-        RuntimeEventParser.Events.CountersV3_0? runtimeCounters,
+        SystemRuntimeEventParser.Events.CountersV3_0? runtimeCounters,
 #endif
-        GcEventParser.Events.Verbose? gcVerbose,
-        GcEventParser.Events.Info? gcInfo)
+        NativeEvent.Verbose? gcVerbose, NativeEvent.Info? gcInfo)
     {
         if (gcVerbose != null)
         {
@@ -297,7 +292,7 @@ public class RuntimeInstrumentation : IDisposable
                 CreateTag(LabelGeneration, GetGenerationToString(e.Generation)),
                 CreateTag(LabelReason, GcReasonToLabels[e.Reason]));
 
-            GcEventParser.Events.HeapStatsEvent stats = default;
+            NativeEvent.HeapStatsEvent stats = default;
             gcInfo.HeapStats += e => stats = e;
 
             meter.CreateObservableGauge($"{options.MetricPrefix}gc.heap.size", () => stats == default
@@ -411,7 +406,7 @@ public class RuntimeInstrumentation : IDisposable
     }
 
     private static void TimeInGc(Meter meter, RuntimeMetricsOptions options,
-        RuntimeEventParser.Events.CountersV3_0? runtimeCounters)
+        SystemRuntimeEventParser.Events.CountersV3_0? runtimeCounters)
     {
         Func<int> timeInGc;
         if (runtimeCounters != null)
@@ -501,9 +496,9 @@ public class RuntimeInstrumentation : IDisposable
 #endif
     private static void ThreadingInstrumentation(Meter meter, RuntimeMetricsOptions options,
 #if NETFRAMEWORK
-        ThreadPoolSchedulingParser.Events.Verbose? threadPoolSchedulingInfo,
+        FrameworkEventParser.Events.Verbose? frameworkVerbose,
 #endif
-        ThreadPoolEventParser.Events.Info? threadPoolInfo)
+        NativeEvent.Info? threadPoolInfo)
     {
 #if NETCOREAPP
         meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.thread.count", () => ThreadPool.ThreadCount, description: "ThreadPool thread count");
@@ -512,13 +507,13 @@ public class RuntimeInstrumentation : IDisposable
         meter.CreateObservableCounter($"{options.MetricPrefix}threadpool.completed.items.total", () => ThreadPool.CompletedWorkItemCount, description: "ThreadPool completed work item count");
         meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.timer.count", () => Timer.ActiveCount, description: "Number of active timers");
 #else
-        if (threadPoolSchedulingInfo != null)
+        if (frameworkVerbose != null)
         {
             var completedItems = 0L;
             var total = 0L;
 
-            threadPoolSchedulingInfo.Enqueue += () => Interlocked.Increment(ref total);
-            threadPoolSchedulingInfo.Dequeue += () =>
+            frameworkVerbose.Enqueue += () => Interlocked.Increment(ref total);
+            frameworkVerbose.Dequeue += () =>
             {
                 Interlocked.Increment(ref completedItems);
                 if (Interlocked.Read(ref total) > 0) Interlocked.Decrement(ref total);

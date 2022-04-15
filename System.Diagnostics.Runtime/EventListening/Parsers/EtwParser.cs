@@ -180,7 +180,7 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
 
     private void ExceptionStart(ExceptionTraceData data)
     {
-        if (data.ProcessID != ProcessId) return;
+        if (data.ProcessID != ProcessId || data.ExceptionFlags.HasFlag(ExceptionThrownFlags.ReThrown)) return;
 
         if (ExceptionThrown is { } func)
             func(new(data.ExceptionType));

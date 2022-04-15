@@ -305,9 +305,13 @@ public class RuntimeInstrumentation : IDisposable
                 () => stats == default ? Array.Empty<Measurement<long>>() : new[] { new Measurement<long>(stats.FinalizationQueueLength) },
                 description: "The number of objects waiting to be finalized");
 #if NETFRAMEWORK
-            var fragmentedBytes = -0L;
+            var fragmentedBytes = -1L;
 
-            nativeEvent.HeapFragmentation += e => fragmentedBytes = e.FragmentedBytes;
+            nativeEvent.HeapFragmentation += e =>
+            {
+                if (fragmentedBytes >= 0 || e.FragmentedBytes > 0)
+                    fragmentedBytes = e.FragmentedBytes;
+            };
 
             meter.CreateObservableGauge($"{options.MetricPrefix}gc.fragmentation", () =>
                     GetFragmentation(fragmentedBytes, stats.Gen0SizeBytes + stats.Gen1SizeBytes + stats.Gen2SizeBytes + stats.LohSizeBytes),

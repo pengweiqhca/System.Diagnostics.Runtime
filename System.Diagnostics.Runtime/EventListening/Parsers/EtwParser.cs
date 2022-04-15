@@ -163,14 +163,14 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
 
     private void ContentionStart(ContentionStartTraceData data)
     {
-        if (data.ProcessID != ProcessId || data.ContentionFlags != ContentionFlags.Managed) return;
+        if (data.ProcessID != ProcessId) return;
 
         _contentionTimer.Start(data.ThreadID, data.TimeStamp);
     }
 
     private void ContentionStop(ContentionStopTraceData data)
     {
-        if (data.ProcessID != ProcessId || data.ContentionFlags != ContentionFlags.Managed) return;
+        if (data.ProcessID != ProcessId) return;
 
         if (_contentionTimer.TryStop(data.ThreadID, data.TimeStamp, out var duration) &&
             duration > TimeSpan.Zero &&

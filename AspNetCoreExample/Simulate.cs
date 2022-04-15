@@ -6,8 +6,11 @@ namespace System.Diagnostics.Runtime;
 
 public static class Simulate
 {
+    private static readonly object LockObj = new();
+
     public static async Task Invoke(
         bool simulateAlloc = true,
+        bool simulateContention = true,
         bool simulateJit = true,
         bool simulateException = true,
         bool simulateBlocking = true,
@@ -27,6 +30,14 @@ public static class Simulate
 
         // await a task (will result in a Task being scheduled on the thread pool)
         await Task.Yield();
+
+        if (simulateContention)
+        {
+            lock (LockObj)
+            {
+                Thread.Sleep(100);
+            }
+        }
 
         if (simulateJit)
         {

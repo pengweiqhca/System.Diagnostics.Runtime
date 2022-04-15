@@ -10,7 +10,7 @@ namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
 //https://github.com/microsoft/perfview/blob/main/documentation/TraceEvent/TraceEventProgrammersGuide.md
 //https://labs.criteo.com/2018/07/grab-etw-session-providers-and-events/
-public class EtwParser : IDisposable, NativeEvent.Error, NativeEvent.Info, NativeEvent.Verbose
+public class EtwParser : IDisposable, NativeEvent.Error, NativeEvent.Info, NativeEvent.Verbose, NativeEvent.Verbose2
 {
     // flags representing the "Garbage Collection" + "Preparation for garbage collection" pause reasons
     private const GCSuspendEEReason SuspendGcReasons = GCSuspendEEReason.SuspendForGC | GCSuspendEEReason.SuspendForGCPrep;
@@ -70,6 +70,7 @@ public class EtwParser : IDisposable, NativeEvent.Error, NativeEvent.Info, Nativ
         _session.Source.Clr.GCStart += GCStart;
         _session.Source.Clr.GCStop += GCStop;
         _session.Source.Clr.GCAllocationTick += GCAllocationTick;
+        _session.Source.Clr.GCPerHeapHistory += GCPerHeapHistory;
         _session.Source.Clr.ThreadPoolWorkerThreadAdjustmentAdjustment += ThreadPoolWorkerThreadAdjustment;
         _session.Source.Clr.IOThreadCreationStop += IOThreadAdjustment;
         _session.Source.Clr.IOThreadRetirementStop += IOThreadAdjustment;
@@ -107,6 +108,7 @@ public class EtwParser : IDisposable, NativeEvent.Error, NativeEvent.Info, Nativ
                         NativeRuntimeEventSource.EventId.IoThreadRetire,
                         NativeRuntimeEventSource.EventId.IoThreadUnretire,
                         NativeRuntimeEventSource.EventId.IoThreadTerminate,
+                        NativeRuntimeEventSource.EventId.PerHeapHistory,
                     }
                 });
         }
@@ -121,6 +123,7 @@ public class EtwParser : IDisposable, NativeEvent.Error, NativeEvent.Info, Nativ
             _session.Source.Clr.GCStart -= GCStart;
             _session.Source.Clr.GCStop -= GCStop;
             _session.Source.Clr.GCAllocationTick -= GCAllocationTick;
+            _session.Source.Clr.GCPerHeapHistory -= GCPerHeapHistory;
             _session.Source.Clr.ThreadPoolWorkerThreadAdjustmentAdjustment -= ThreadPoolWorkerThreadAdjustment;
             _session.Source.Clr.IOThreadCreationStop -= IOThreadAdjustment;
             _session.Source.Clr.IOThreadRetirementStop -= IOThreadAdjustment;
@@ -141,6 +144,7 @@ public class EtwParser : IDisposable, NativeEvent.Error, NativeEvent.Info, Nativ
             _session.Source.Clr.GCStart -= GCStart;
             _session.Source.Clr.GCStop -= GCStop;
             _session.Source.Clr.GCAllocationTick -= GCAllocationTick;
+            _session.Source.Clr.GCPerHeapHistory -= GCPerHeapHistory;
             _session.Source.Clr.ThreadPoolWorkerThreadAdjustmentAdjustment -= ThreadPoolWorkerThreadAdjustment;
             _session.Source.Clr.IOThreadCreationStop -= IOThreadAdjustment;
             _session.Source.Clr.IOThreadRetirementStop -= IOThreadAdjustment;
@@ -154,6 +158,7 @@ public class EtwParser : IDisposable, NativeEvent.Error, NativeEvent.Info, Nativ
     public event Action<NativeEvent.CollectionStartEvent>? CollectionStart;
     public event Action<NativeEvent.CollectionCompleteEvent>? CollectionComplete;
     public event Action<NativeEvent.AllocationTickEvent>? AllocationTick;
+    public event Action<NativeEvent.HeapFragmentationEvent>? HeapFragmentation;
     public event Action<NativeEvent.ThreadPoolAdjustedEvent>? ThreadPoolAdjusted;
     public event Action<NativeEvent.IoThreadPoolAdjustedEvent>? IoThreadPoolAdjusted;
 
@@ -234,6 +239,23 @@ public class EtwParser : IDisposable, NativeEvent.Error, NativeEvent.Info, Nativ
 
         if (AllocationTick is { } func)
             func(new((uint)data.AllocationAmount, data.AllocationKind == GCAllocationKind.Large));
+    }
+
+    private void GCPerHeapHistory(GCPerHeapHistoryTraceData data)
+    {
+        if (data.ProcessID != ProcessId || !data.VersionRecognized) return;
+
+        var fragmentedBytes = 0L;
+        var heapSizeBytes = 0L;
+
+        for (var genNumber = Gens.Gen0; genNumber <= Gens.GenLargeObj; ++genNumber)
+        {
+            fragmentedBytes += data.GenData(genNumber).Fragmentation;
+            heapSizeBytes += data.GenData(genNumber).SizeAfter;
+        }
+
+        if (heapSizeBytes > 0 && HeapFragmentation is { } func)
+            func(new(fragmentedBytes, heapSizeBytes));
     }
 
     private void ThreadPoolWorkerThreadAdjustment(ThreadPoolWorkerThreadAdjustmentTraceData data)

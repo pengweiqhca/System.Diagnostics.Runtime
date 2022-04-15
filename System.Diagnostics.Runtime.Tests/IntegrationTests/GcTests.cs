@@ -116,7 +116,18 @@ internal class Given_System_Runtime_Are_Available_For_GcStats : IntegrationTestB
 internal class Given_Native_Runtime_Are_Available_For_GcStats : IntegrationTestBase
 {
     protected override RuntimeMetricsOptions GetOptions() => new() { GcEnabled = true, EnabledNativeRuntime = true };
+#if NETFRAMEWORK
+    [Test]
+    public Task When_a_garbage_collection_is_performed_then_the_gc_fragmentation_can_be_calculated() =>
+        InstrumentTest.Assert(() =>
+            {
+                _ = new byte[1024 * 1024 * 10];
 
+                GC.Collect(0, GCCollectionMode.Forced);
+            },
+            measurements => Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.fragmentation"),
+                Is.GreaterThan(0.0).After(10000, 100)), $"{Options.MetricPrefix}gc.fragmentation");
+#endif
     [Test]
     public Task When_a_garbage_collection_is_performed_then_the_heap_sizes_are_updated() =>
         InstrumentTest.Assert(() =>
@@ -215,7 +226,7 @@ internal class Given_Native_Runtime_Are_Available_For_GcStats : IntegrationTestB
             }, $"{Options.MetricPrefix}gc.collection.time",
             $"{Options.MetricPrefix}gc.collection.total",
             $"{Options.MetricPrefix}gc.pause.time");
-#if NETFRAMEWORK
+
     [Test]
     public Task When_100kb_of_small_objects_are_allocated_then_the_allocated_bytes_counter_is_increased() =>
         InstrumentTest.Assert(() =>
@@ -239,7 +250,7 @@ internal class Given_Native_Runtime_Are_Available_For_GcStats : IntegrationTestB
                 }
             }, measurements => Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.allocated.total", "gc.heap", "loh"), Is.GreaterThanOrEqualTo(100_0000).After(2_000, 10)),
             $"{Options.MetricPrefix}gc.allocated.total");
-#endif
+
     private class FinalizableTest
     {
         ~FinalizableTest()

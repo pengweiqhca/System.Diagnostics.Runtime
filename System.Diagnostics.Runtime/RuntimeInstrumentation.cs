@@ -117,7 +117,7 @@ public class RuntimeInstrumentation : IDisposable
                 CreateNativeRuntimeEventParser(),
                 CreateNativeRuntimeEventParser());
 #else
-            GcInstrumentation(meter, options, CreateEtwParser(), CreateEtwParser());
+            GcInstrumentation(meter, options, CreateEtwParser(), CreateEtwParser(), CreateEtwParser());
 #endif
         }
 #if NET6_0_OR_GREATER
@@ -245,6 +245,8 @@ public class RuntimeInstrumentation : IDisposable
         SystemRuntimeEventParser.Events.CountersV5_0? runtime5Counters,
 #endif
         SystemRuntimeEventParser.Events.CountersV3_0? runtimeCounters,
+#else
+        NativeEvent.Verbose2? gcVerbose2,
 #endif
         NativeEvent.Verbose? gcVerbose, NativeEvent.Info? gcInfo)
     {
@@ -266,6 +268,15 @@ public class RuntimeInstrumentation : IDisposable
         meter.CreateObservableCounter($"{options.MetricPrefix}gc.committed.total", () => GC.GetGCMemoryInfo().TotalCommittedBytes, "B", description: "GC Committed bytes since process start");
 #endif
         TimeInGc(meter, options, runtimeCounters);
+#else
+        if (gcVerbose2 != null)
+        {
+            var fragmentation = 0d;
+
+            gcVerbose2.HeapFragmentation += e => fragmentation = e.FragmentedBytes * 100d / e.HeapSizeBytes;
+
+            meter.CreateObservableGauge($"{options.MetricPrefix}gc.fragmentation", () => fragmentation, "%", "GC fragmentation");
+        }
 #endif
         if (gcInfo != null)
         {

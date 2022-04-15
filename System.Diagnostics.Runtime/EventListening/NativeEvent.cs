@@ -26,6 +26,11 @@ public static class NativeEvent
         event Action<AllocationTickEvent> AllocationTick;
     }
 
+    public interface Verbose2 : IVerboseEvents
+    {
+        event Action<HeapFragmentationEvent> HeapFragmentation;
+    }
+
     public record struct ContentionEndEvent(TimeSpan ContentionDuration);
 
     public record struct ExceptionThrownEvent(string? ExceptionType);
@@ -78,6 +83,8 @@ public static class NativeEvent
     public record struct CollectionCompleteEvent(uint Generation, NativeRuntimeEventSource.GCType Type, TimeSpan Duration);
 
     public record struct AllocationTickEvent(uint AllocatedBytes, bool IsLargeObjectHeap);
+
+    public record struct HeapFragmentationEvent(long FragmentedBytes, long HeapSizeBytes);
 
     public record struct ThreadPoolAdjustedEvent(uint NumThreads, NativeRuntimeEventSource.ThreadAdjustmentReason AdjustmentReason);
 

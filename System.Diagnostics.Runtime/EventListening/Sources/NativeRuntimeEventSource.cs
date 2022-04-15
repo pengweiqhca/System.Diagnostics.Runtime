@@ -222,7 +222,7 @@ public class NativeRuntimeEventSource
         ThreadTimedOut
     }
 
-    //https://docs.microsoft.com/en-us/dotnet/framework/performance/clr-etw-events
+    // https://docs.microsoft.com/en-us/dotnet/framework/performance/garbage-collection-etw-events
     public static class EventId
     {
         public const int GcStart = 1;
@@ -239,5 +239,6 @@ public class NativeRuntimeEventSource
         public const int ExceptionThrown = 80;
         public const int ContentionStart = 81;
         public const int ContentionStop = 91;
+        public const int PerHeapHistory = 204;
     }
 }

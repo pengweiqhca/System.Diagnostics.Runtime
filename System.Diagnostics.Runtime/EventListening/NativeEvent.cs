@@ -5,28 +5,20 @@ namespace System.Diagnostics.Runtime.EventListening;
 
 public static class NativeEvent
 {
-    public interface Error : IInfoEvents
-    {
-        event Action<ExceptionThrownEvent> ExceptionThrown;
-    }
-
-    public interface Info : IInfoEvents
+    public interface INativeEvent : IEvents
     {
         event Action<ContentionEndEvent> ContentionEnd;
         event Action<HeapStatsEvent> HeapStats;
+        event Action<ExceptionThrownEvent> ExceptionThrown;
         event Action<PauseCompleteEvent> PauseComplete;
         event Action<CollectionStartEvent> CollectionStart;
         event Action<CollectionCompleteEvent> CollectionComplete;
+        event Action<AllocationTickEvent> AllocationTick;
         event Action<ThreadPoolAdjustedEvent> ThreadPoolAdjusted;
         event Action<IoThreadPoolAdjustedEvent> IoThreadPoolAdjusted;
     }
 
-    public interface Verbose : IVerboseEvents
-    {
-        event Action<AllocationTickEvent> AllocationTick;
-    }
-
-    public interface Verbose2 : IVerboseEvents
+    public interface IExtendNativeEvent : INativeEvent
     {
         event Action<HeapFragmentationEvent> HeapFragmentation;
     }
@@ -84,7 +76,7 @@ public static class NativeEvent
 
     public record struct AllocationTickEvent(uint AllocatedBytes, bool IsLargeObjectHeap);
 
-    public record struct HeapFragmentationEvent(long FragmentedBytes, long HeapSizeBytes);
+    public record struct HeapFragmentationEvent(long FragmentedBytes);
 
     public record struct ThreadPoolAdjustedEvent(uint NumThreads, NativeRuntimeEventSource.ThreadAdjustmentReason AdjustmentReason);
 

@@ -110,14 +110,10 @@ public class RuntimeInstrumentation : IDisposable
         {
 #if NETCOREAPP
             GcInstrumentation(meter, options,
-#if NET6_0_OR_GREATER
                 CreateSystemRuntimeEventParser(),
-#endif
-                CreateSystemRuntimeEventParser(),
-                CreateNativeRuntimeEventParser(),
                 CreateNativeRuntimeEventParser());
 #else
-            GcInstrumentation(meter, options, CreateEtwParser(), CreateEtwParser(), CreateEtwParser());
+            GcInstrumentation(meter, options, CreateEtwParser());
 #endif
         }
 #if NET6_0_OR_GREATER
@@ -164,7 +160,7 @@ public class RuntimeInstrumentation : IDisposable
         meter.CreateObservableGauge($"{options.MetricPrefix}assembly.count", () => AppDomain.CurrentDomain.GetAssemblies().Length, description: "Number of Assemblies Loaded");
 
     private static void ContentionInstrumentation(Meter meter, RuntimeMetricsOptions options,
-        NativeEvent.Info? contentionInfo)
+        NativeEvent.INativeEvent? contentionInfo)
     {
 #if NETCOREAPP
         meter.CreateObservableCounter($"{options.MetricPrefix}lock.contention.total", () => Monitor.LockContentionCount, description: "Monitor Lock Contention Count");
@@ -211,7 +207,7 @@ public class RuntimeInstrumentation : IDisposable
 #if NETCOREAPP
         SystemRuntimeEventParser.Events.CountersV3_0? runtimeCounters,
 #endif
-        NativeEvent.Error? exceptionError)
+        NativeEvent.INativeEvent? exceptionError)
     {
         if (exceptionError != null)
         {
@@ -242,24 +238,16 @@ public class RuntimeInstrumentation : IDisposable
     private static void GcInstrumentation(Meter meter, RuntimeMetricsOptions options,
 #if NETCOREAPP
 #if NET6_0_OR_GREATER
-        SystemRuntimeEventParser.Events.CountersV5_0? runtime5Counters,
-#endif
-        SystemRuntimeEventParser.Events.CountersV3_0? runtimeCounters,
+        SystemRuntimeEventParser.Events.CountersV5_0? runtimeCounters,
 #else
-        NativeEvent.Verbose2? gcVerbose2,
+        SystemRuntimeEventParser.Events.CountersV3_0? runtimeCounters,
 #endif
-        NativeEvent.Verbose? gcVerbose, NativeEvent.Info? gcInfo)
+        NativeEvent.INativeEvent? nativeEvent)
+#else
+        NativeEvent.IExtendNativeEvent? nativeEvent)
+#endif
     {
-        if (gcVerbose != null)
-        {
-            var allocated = meter.CreateCounter<long>($"{options.MetricPrefix}gc.allocated.total", "B", "Allocation bytes since process start");
-
-            gcVerbose.AllocationTick += e => allocated.Add(e.AllocatedBytes, CreateTag(LabelHeap, e.IsLargeObjectHeap ? "loh" : "soh"));
-        }
 #if NETCOREAPP
-        else
-            meter.CreateObservableCounter($"{options.MetricPrefix}gc.allocated.total", () => GC.GetTotalAllocatedBytes(), "B", "Allocation bytes since process start");
-
         meter.CreateObservableGauge($"{options.MetricPrefix}gc.fragmentation", GetFragmentation, "%", "GC fragmentation");
         meter.CreateObservableGauge($"{options.MetricPrefix}gc.memory.total.available",
             () => GC.GetGCMemoryInfo().TotalAvailableMemoryBytes,
@@ -268,23 +256,14 @@ public class RuntimeInstrumentation : IDisposable
         meter.CreateObservableCounter($"{options.MetricPrefix}gc.committed.total", () => GC.GetGCMemoryInfo().TotalCommittedBytes, "B", description: "GC Committed bytes since process start");
 #endif
         TimeInGc(meter, options, runtimeCounters);
-#else
-        if (gcVerbose2 != null)
-        {
-            var fragmentation = 0d;
-
-            gcVerbose2.HeapFragmentation += e => fragmentation = e.FragmentedBytes * 100d / e.HeapSizeBytes;
-
-            meter.CreateObservableGauge($"{options.MetricPrefix}gc.fragmentation", () => fragmentation, "%", "GC fragmentation");
-        }
 #endif
-        if (gcInfo != null)
+        if (nativeEvent != null)
         {
             var gcCollectionSeconds = meter.CreateHistogram<double>(
                 $"{options.MetricPrefix}gc.collection.time", "ms",
                 "The amount of time spent running garbage collections");
 
-            gcInfo.CollectionComplete += e => gcCollectionSeconds.Record(e.Duration.TotalMilliseconds,
+            nativeEvent.CollectionComplete += e => gcCollectionSeconds.Record(e.Duration.TotalMilliseconds,
                 CreateTag(LabelGeneration, GetGenerationToString(e.Generation)),
                 CreateTag(LabelGcType, GcTypeToLabels[e.Type]));
 
@@ -292,18 +271,18 @@ public class RuntimeInstrumentation : IDisposable
                 $"{options.MetricPrefix}gc.pause.time", "ms",
                 "The amount of time execution was paused for garbage collection");
 
-            gcInfo.PauseComplete += e => gcPauseSeconds.Record(e.PauseDuration.TotalMilliseconds);
+            nativeEvent.PauseComplete += e => gcPauseSeconds.Record(e.PauseDuration.TotalMilliseconds);
 
             var gcCollections = meter.CreateCounter<int>(
                 $"{options.MetricPrefix}gc.collection.total",
                 description: "Counts the number of garbage collections that have occurred, broken down by generation number and the reason for the collection.");
 
-            gcInfo.CollectionStart += e => gcCollections.Add(1,
+            nativeEvent.CollectionStart += e => gcCollections.Add(1,
                 CreateTag(LabelGeneration, GetGenerationToString(e.Generation)),
                 CreateTag(LabelReason, GcReasonToLabels[e.Reason]));
 
             NativeEvent.HeapStatsEvent stats = default;
-            gcInfo.HeapStats += e => stats = e;
+            nativeEvent.HeapStats += e => stats = e;
 
             meter.CreateObservableGauge($"{options.MetricPrefix}gc.heap.size", () => stats == default
                 ? Array.Empty<Measurement<long>>()
@@ -325,6 +304,18 @@ public class RuntimeInstrumentation : IDisposable
             meter.CreateObservableGauge($"{options.MetricPrefix}gc.finalization.queue.length",
                 () => stats == default ? Array.Empty<Measurement<long>>() : new[] { new Measurement<long>(stats.FinalizationQueueLength) },
                 description: "The number of objects waiting to be finalized");
+#if NETFRAMEWORK
+            var fragmentedBytes = -0L;
+
+            nativeEvent.HeapFragmentation += e => fragmentedBytes = e.FragmentedBytes;
+
+            meter.CreateObservableGauge($"{options.MetricPrefix}gc.fragmentation", () =>
+                    GetFragmentation(fragmentedBytes, stats.Gen0SizeBytes + stats.Gen1SizeBytes + stats.Gen2SizeBytes + stats.LohSizeBytes),
+                "%", "GC fragmentation");
+#endif
+            var allocated = meter.CreateCounter<long>($"{options.MetricPrefix}gc.allocated.total", "B", "Allocation bytes since process start");
+
+            nativeEvent.AllocationTick += e => allocated.Add(e.AllocatedBytes, CreateTag(LabelHeap, e.IsLargeObjectHeap ? "loh" : "soh"));
         }
         else
         {
@@ -335,6 +326,8 @@ public class RuntimeInstrumentation : IDisposable
                 CreateMeasurement(GC.CollectionCount(2), LabelGeneration, "2")
             }, description: "Counts the number of garbage collections that have occurred");
 #if NETCOREAPP
+            meter.CreateObservableCounter($"{options.MetricPrefix}gc.allocated.total", () => GC.GetTotalAllocatedBytes(), "B", "Allocation bytes since process start");
+
             if (runtimeCounters != null)
             {
                 var heapSize = new HeapSize();
@@ -359,8 +352,7 @@ public class RuntimeInstrumentation : IDisposable
                 runtimeCounters.Gen2Size += e => heapSize.Gen2SizeBytes = (long)e.Mean;
                 runtimeCounters.LohSize += e => heapSize.LohSizeBytes = (long)e.Mean;
 #if NET6_0_OR_GREATER
-                if (runtime5Counters != null)
-                    runtime5Counters.PohSize += e => heapSize.PohSizeBytes = (long)e.Mean;
+                runtimeCounters.PohSize += e => heapSize.PohSizeBytes = (long)e.Mean;
 #endif
             }
             else if (typeof(GC).GetMethod("GetGenerationSize", BindingFlags.Static | BindingFlags.NonPublic)?
@@ -396,12 +388,17 @@ public class RuntimeInstrumentation : IDisposable
         4 => "poh",
         _ => generation.ToString()
     };
+
+    private static IEnumerable<Measurement<double>> GetFragmentation(long fragmentedBytes, long heapSizeBytes) =>
+        fragmentedBytes < 0 || heapSizeBytes <= 0
+            ? Array.Empty<Measurement<double>>()
+            : new[] { new Measurement<double>(fragmentedBytes * 100d / heapSizeBytes) };
 #if NETCOREAPP
-    private static double GetFragmentation()
+    private static IEnumerable<Measurement<double>> GetFragmentation()
     {
         var gcInfo = GC.GetGCMemoryInfo();
 
-        return gcInfo.HeapSizeBytes == 0 ? 0 : gcInfo.FragmentedBytes * 100d / gcInfo.HeapSizeBytes;
+        return GetFragmentation(gcInfo.FragmentedBytes, gcInfo.HeapSizeBytes);
     }
 
     private class HeapSize
@@ -508,7 +505,7 @@ public class RuntimeInstrumentation : IDisposable
 #if NETFRAMEWORK
         FrameworkEventParser.Events.Verbose? frameworkVerbose,
 #endif
-        NativeEvent.Info? threadPoolInfo)
+        NativeEvent.INativeEvent? nativeEvent)
     {
 #if NETCOREAPP
         meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.thread.count", () => ThreadPool.ThreadCount, description: "ThreadPool thread count");
@@ -533,7 +530,7 @@ public class RuntimeInstrumentation : IDisposable
             meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.queue.length", () => Math.Max(0, total), description: "ThreadPool queue length");
         }
 #endif
-        if (threadPoolInfo != null)
+        if (nativeEvent != null)
         {
             var adjustmentsTotal = meter.CreateCounter<int>(
                 $"{options.MetricPrefix}threadpool.adjustments.total",
@@ -541,7 +538,7 @@ public class RuntimeInstrumentation : IDisposable
 #if NETFRAMEWORK
             var threadCount = 0;
 
-            threadPoolInfo.ThreadPoolAdjusted += e =>
+            nativeEvent.ThreadPoolAdjusted += e =>
             {
                 threadCount = (int)e.NumThreads;
 
@@ -550,7 +547,7 @@ public class RuntimeInstrumentation : IDisposable
 
             meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.thread.count", () => threadCount, description: "ThreadPool thread count");
 #else
-            threadPoolInfo.ThreadPoolAdjusted += e =>
+            nativeEvent.ThreadPoolAdjusted += e =>
                 adjustmentsTotal.Add(1, CreateTag(LabelAdjustmentReason, AdjustmentReasonToLabel[e.AdjustmentReason]));
 #endif
 
@@ -559,7 +556,7 @@ public class RuntimeInstrumentation : IDisposable
                 // IO threadpool only exists on windows
 
                 var iocThreads = 0;
-                threadPoolInfo.IoThreadPoolAdjusted += e => iocThreads = (int)e.NumThreads;
+                nativeEvent.IoThreadPoolAdjusted += e => iocThreads = (int)e.NumThreads;
 
                 meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.io.thread.count",
                     () => iocThreads,

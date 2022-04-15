@@ -10,7 +10,7 @@ namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
 //https://github.com/microsoft/perfview/blob/main/documentation/TraceEvent/TraceEventProgrammersGuide.md
 //https://labs.criteo.com/2018/07/grab-etw-session-providers-and-events/
-public class EtwParser : IDisposable, NativeEvent.Error, NativeEvent.Info, NativeEvent.Verbose, NativeEvent.Verbose2
+public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
 {
     // flags representing the "Garbage Collection" + "Preparation for garbage collection" pause reasons
     private const GCSuspendEEReason SuspendGcReasons = GCSuspendEEReason.SuspendForGC | GCSuspendEEReason.SuspendForGCPrep;
@@ -82,32 +82,31 @@ public class EtwParser : IDisposable, NativeEvent.Error, NativeEvent.Info, Nativ
                 TraceEventLevel.Verbose,
                 (ulong)(
                     ClrTraceEventParser.Keywords.Contention | // thread contention timing
-                    ClrTraceEventParser.Keywords.Threading | // threadpool events
                     ClrTraceEventParser.Keywords.Exception | // get the first chance exceptions
-                    //ClrTraceEventParser.Keywords.GCHeapAndTypeNames |
-                    ClrTraceEventParser.Keywords.Type | // for finalizer and exceptions type names
-                    ClrTraceEventParser.Keywords.GC // garbage collector details
+                    ClrTraceEventParser.Keywords.GC | // garbage collector details
+                    ClrTraceEventParser.Keywords.Threading | // threadpool events
+                    ClrTraceEventParser.Keywords.Type // for finalizer and exceptions type names
                 ), new()
                 {
-                    // EnableInContainers = true,
-                    // EnableSourceContainerTracking = true,
+                    EnableInContainers = true,
+                    EnableSourceContainerTracking = true,
                     ProcessIDFilter = new List<int> { ProcessId },
                     EventIDsToEnable = new List<int>
                     {
-                        NativeRuntimeEventSource.EventId.ContentionStart,
-                        NativeRuntimeEventSource.EventId.ContentionStop,
-                        NativeRuntimeEventSource.EventId.ExceptionThrown,
                         NativeRuntimeEventSource.EventId.GcStart,
                         NativeRuntimeEventSource.EventId.GcStop,
                         NativeRuntimeEventSource.EventId.RestartEEStop,
                         NativeRuntimeEventSource.EventId.HeapStats,
                         NativeRuntimeEventSource.EventId.SuspendEEStart,
                         NativeRuntimeEventSource.EventId.AllocTick,
-                        NativeRuntimeEventSource.EventId.ThreadPoolAdjustment,
                         NativeRuntimeEventSource.EventId.IoThreadCreate,
+                        NativeRuntimeEventSource.EventId.IoThreadTerminate,
                         NativeRuntimeEventSource.EventId.IoThreadRetire,
                         NativeRuntimeEventSource.EventId.IoThreadUnretire,
-                        NativeRuntimeEventSource.EventId.IoThreadTerminate,
+                        NativeRuntimeEventSource.EventId.ThreadPoolAdjustment,
+                        NativeRuntimeEventSource.EventId.ExceptionThrown,
+                        NativeRuntimeEventSource.EventId.ContentionStart,
+                        NativeRuntimeEventSource.EventId.ContentionStop,
                         NativeRuntimeEventSource.EventId.PerHeapHistory,
                     }
                 });
@@ -246,16 +245,11 @@ public class EtwParser : IDisposable, NativeEvent.Error, NativeEvent.Info, Nativ
         if (data.ProcessID != ProcessId || !data.VersionRecognized) return;
 
         var fragmentedBytes = 0L;
-        var heapSizeBytes = 0L;
 
-        for (var genNumber = Gens.Gen0; genNumber <= Gens.GenLargeObj; ++genNumber)
-        {
+        for (var genNumber = Gens.Gen0; genNumber < Gens.GenPinObj; genNumber++)
             fragmentedBytes += data.GenData(genNumber).Fragmentation;
-            heapSizeBytes += data.GenData(genNumber).SizeAfter;
-        }
 
-        if (heapSizeBytes > 0 && HeapFragmentation is { } func)
-            func(new(fragmentedBytes, heapSizeBytes));
+        if (HeapFragmentation is { } func) func(new(fragmentedBytes));
     }
 
     private void ThreadPoolWorkerThreadAdjustment(ThreadPoolWorkerThreadAdjustmentTraceData data)

@@ -26,7 +26,7 @@ public class FrameworkEventParser : IEventParser<FrameworkEventParser>, Framewor
 
     public static class Events
     {
-        public interface Verbose : IVerboseEvents
+        public interface Verbose : IEvents
         {
             event Action Enqueue;
             event Action Dequeue;

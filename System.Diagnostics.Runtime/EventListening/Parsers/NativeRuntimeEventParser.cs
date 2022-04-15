@@ -6,7 +6,7 @@ using System.Diagnostics.Tracing;
 namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
 public class NativeRuntimeEventParser : IEventParser<NativeRuntimeEventParser>,
-    NativeEvent.Error, NativeEvent.Info, NativeEvent.Verbose
+    NativeEvent.INativeEvent
 {
     // flags representing the "Garbage Collection" + "Preparation for garbage collection" pause reasons
     private const uint SuspendGcReasons = 0x1 | 0x6;

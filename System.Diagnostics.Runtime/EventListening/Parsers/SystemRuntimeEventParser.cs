@@ -5,27 +5,24 @@ namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
 //https://github.com/dotnet/runtime/blob/main/src/libraries/System.Private.CoreLib/src/System/Diagnostics/Tracing/RuntimeEventSource.cs#L78
 public class SystemRuntimeEventParser : EventCounterParserBase<SystemRuntimeEventParser>,
-    SystemRuntimeEventParser.Events.CountersV3_0,
+#if NET6_0_OR_GREATER
     SystemRuntimeEventParser.Events.CountersV5_0
+#else
+    SystemRuntimeEventParser.Events.CountersV3_0
+#endif
 {
 #pragma warning disable CS0067
-    [CounterName("cpu-usage")]
-    public event Action<MeanCounterValue>? CpuUsage;
+    [CounterName("cpu-usage")] public event Action<MeanCounterValue>? CpuUsage;
 
-    [CounterName("working-set")]
-    public event Action<MeanCounterValue>? WorkingSet;
+    [CounterName("working-set")] public event Action<MeanCounterValue>? WorkingSet;
 
-    [CounterName("gc-heap-size")]
-    public event Action<MeanCounterValue>? GcHeapSize;
+    [CounterName("gc-heap-size")] public event Action<MeanCounterValue>? GcHeapSize;
 
-    [CounterName("gen-0-gc-count")]
-    public event Action<IncrementingCounterValue>? Gen0GcCount;
+    [CounterName("gen-0-gc-count")] public event Action<IncrementingCounterValue>? Gen0GcCount;
 
-    [CounterName("gen-1-gc-count")]
-    public event Action<IncrementingCounterValue>? Gen1GcCount;
+    [CounterName("gen-1-gc-count")] public event Action<IncrementingCounterValue>? Gen1GcCount;
 
-    [CounterName("gen-2-gc-count")]
-    public event Action<IncrementingCounterValue>? Gen2GcCount;
+    [CounterName("gen-2-gc-count")] public event Action<IncrementingCounterValue>? Gen2GcCount;
 
     [CounterName("threadpool-thread-count")]
     public event Action<MeanCounterValue>? ThreadPoolThreadCount;
@@ -39,47 +36,33 @@ public class SystemRuntimeEventParser : EventCounterParserBase<SystemRuntimeEven
     [CounterName("threadpool-completed-items-count")]
     public event Action<IncrementingCounterValue>? ThreadPoolCompletedItemsCount;
 
-    [CounterName("alloc-rate")]
-    public event Action<IncrementingCounterValue>? AllocRate;
+    [CounterName("alloc-rate")] public event Action<IncrementingCounterValue>? AllocRate;
 
-    [CounterName("active-timer-count")]
-    public event Action<MeanCounterValue>? ActiveTimerCount;
+    [CounterName("active-timer-count")] public event Action<MeanCounterValue>? ActiveTimerCount;
 
-    [CounterName("exception-count")]
-    public event Action<IncrementingCounterValue>? ExceptionCount;
+    [CounterName("exception-count")] public event Action<IncrementingCounterValue>? ExceptionCount;
 
-    [CounterName("time-in-gc")]
-    public event Action<MeanCounterValue>? TimeInGc;
+    [CounterName("time-in-gc")] public event Action<MeanCounterValue>? TimeInGc;
 
-    [CounterName("gen-0-size")]
-    public event Action<MeanCounterValue>? Gen0Size;
+    [CounterName("gen-0-size")] public event Action<MeanCounterValue>? Gen0Size;
 
-    [CounterName("gen-1-size")]
-    public event Action<MeanCounterValue>? Gen1Size;
+    [CounterName("gen-1-size")] public event Action<MeanCounterValue>? Gen1Size;
 
-    [CounterName("gen-2-size")]
-    public event Action<MeanCounterValue>? Gen2Size;
+    [CounterName("gen-2-size")] public event Action<MeanCounterValue>? Gen2Size;
 
-    [CounterName("loh-size")]
-    public event Action<MeanCounterValue>? LohSize;
+    [CounterName("loh-size")] public event Action<MeanCounterValue>? LohSize;
 
-    [CounterName("assembly-count")]
-    public event Action<MeanCounterValue>? NumAssembliesLoaded;
+    [CounterName("assembly-count")] public event Action<MeanCounterValue>? NumAssembliesLoaded;
 
-    [CounterName("gc-fragmentation")]
-    public event Action<MeanCounterValue>? GcFragmentation;
+    [CounterName("gc-fragmentation")] public event Action<MeanCounterValue>? GcFragmentation;
 
-    [CounterName("poh-size")]
-    public event Action<MeanCounterValue>? PohSize;
+    [CounterName("poh-size")] public event Action<MeanCounterValue>? PohSize;
 
-    [CounterName("il-bytes-jitted")]
-    public event Action<MeanCounterValue>? IlBytesJitted;
+    [CounterName("il-bytes-jitted")] public event Action<MeanCounterValue>? IlBytesJitted;
 
-    [CounterName("methods-jitted-count")]
-    public event Action<MeanCounterValue>? MethodsJittedCount;
+    [CounterName("methods-jitted-count")] public event Action<MeanCounterValue>? MethodsJittedCount;
 
-    [CounterName("time-in-jit")]
-    public event Action<IncrementingCounterValue>? TimeInJit;
+    [CounterName("time-in-jit")] public event Action<IncrementingCounterValue>? TimeInJit;
 #pragma warning restore CS0067
 
     public override string EventSourceName => SystemRuntimeEventSource.Name;
@@ -108,8 +91,8 @@ public class SystemRuntimeEventParser : EventCounterParserBase<SystemRuntimeEven
             event Action<MeanCounterValue> LohSize;
             event Action<MeanCounterValue> NumAssembliesLoaded;
         }
-
-        public interface CountersV5_0 : ICounterEvents
+#if NET6_0_OR_GREATER
+        public interface CountersV5_0 : CountersV3_0
         {
             event Action<MeanCounterValue> GcFragmentation;
             event Action<MeanCounterValue> PohSize;
@@ -117,6 +100,7 @@ public class SystemRuntimeEventParser : EventCounterParserBase<SystemRuntimeEven
             event Action<MeanCounterValue> MethodsJittedCount;
             event Action<IncrementingCounterValue> TimeInJit;
         }
+#endif
     }
 }
 #endif

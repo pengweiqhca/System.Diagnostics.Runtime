@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿# Metrics exposed
+﻿# Metrics exposed
 
 > ☑️ Need set `EnabledNativeRuntime = true`
 

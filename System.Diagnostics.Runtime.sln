@@ -10,6 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Directory.Build.props = Directory.Build.props
 		README.md = README.md
 		Key.snk = Key.snk
+		metrics-exposed.md = metrics-exposed.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCoreExample", "AspNetCoreExample\AspNetCoreExample.csproj", "{4C331DC3-1AE4-48C6-AA16-D98D43DCEC80}"
@@ -17,12 +18,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "System.Diagnostics.Runtime", "System.Diagnostics.Runtime\System.Diagnostics.Runtime.csproj", "{98F0126D-A296-4BFC-98DE-42AE0F2B3479}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "System.Diagnostics.Runtime.Tests", "System.Diagnostics.Runtime.Tests\System.Diagnostics.Runtime.Tests.csproj", "{79CA51B5-F49F-4D16-93A4-A03B896AD4B5}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{7B54D698-8BB4-4426-BB43-331AFC44E3F4}"
-	ProjectSection(SolutionItems) = preProject
-		docs\metrics-exposed.md = docs\metrics-exposed.md
-		docs\grafana-example.PNG = docs\grafana-example.PNG
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetFrameworkExample", "NetFrameworkExample\NetFrameworkExample.csproj", "{9F0CA4B5-0E94-418B-A077-566E9F57B81D}"
 EndProject

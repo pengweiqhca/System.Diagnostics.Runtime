@@ -1,5 +1,5 @@
 # PW.Diagnostics.Runtime
-A plugin for the [System.Diagnostics.DiagnosticSource](https://www.nuget.org/packages/System.Diagnostics.DiagnosticSource) package, [exposing .NET runtime metrics](docs/metrics-exposed.md) including:
+A plugin for the [System.Diagnostics.DiagnosticSource](https://www.nuget.org/packages/System.Diagnostics.DiagnosticSource) package, [exposing .NET runtime metrics](metrics-exposed.md) including:
 - Garbage collection collection frequencies and timings by generation/ type, pause timings and GC CPU consumption ratio
 - Heap size by generation
 - Bytes allocated by small/ large object heap
@@ -23,7 +23,3 @@ dotnet add package PW.Diagnostics.Runtime
 
 ### Integration with Opentelemetry
 See [example](https://github.com/pengweiqhca/System.Diagnostics.Runtime/blob/main/AspNetCoreExample/Program.cs#L17) and [extension method](https://github.com/pengweiqhca/System.Diagnostics.Runtime/blob/main/AspNetCoreExample/MeterProviderBuilderExtensions.cs)
-
-### Grafana dashboard
-
-![Grafana dashboard sample](docs/grafana-example.PNG)

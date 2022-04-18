@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net471</TargetFramework>
     <OutputType>Exe</OutputType>
+    <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,6 +14,12 @@
     <PackageReference Include="OpenTelemetry.Exporter.Prometheus" Version="*-*" />
 
     <ProjectReference Include="..\System.Diagnostics.Runtime\System.Diagnostics.Runtime.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="docker-compose.override.yml">
+      <DependentUpon>docker-compose.yml</DependentUpon>
+    </None>
   </ItemGroup>
 
 </Project>

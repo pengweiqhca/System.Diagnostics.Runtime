@@ -84,8 +84,7 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
                     ClrTraceEventParser.Keywords.Contention | // thread contention timing
                     ClrTraceEventParser.Keywords.Exception | // get the first chance exceptions
                     ClrTraceEventParser.Keywords.GC | // garbage collector details
-                    ClrTraceEventParser.Keywords.Threading | // threadpool events
-                    ClrTraceEventParser.Keywords.Type // for finalizer and exceptions type names
+                    ClrTraceEventParser.Keywords.Threading // threadpool events
                 ), new()
                 {
                     //EnableInContainers = true,

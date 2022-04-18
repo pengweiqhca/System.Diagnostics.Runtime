@@ -88,8 +88,8 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
                     ClrTraceEventParser.Keywords.Type // for finalizer and exceptions type names
                 ), new()
                 {
-                    EnableInContainers = true,
-                    EnableSourceContainerTracking = true,
+                    //EnableInContainers = true,
+                    //EnableSourceContainerTracking = true,
                     ProcessIDFilter = new List<int> { ProcessId },
                     EventIDsToEnable = new List<int>
                     {

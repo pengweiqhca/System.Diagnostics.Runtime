@@ -8,39 +8,48 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 		.gitignore = .gitignore
 		Directory.Build.props = Directory.Build.props
-		README.md = README.md
 		Key.snk = Key.snk
 		metrics-exposed.md = metrics-exposed.md
+		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCoreExample", "AspNetCoreExample\AspNetCoreExample.csproj", "{4C331DC3-1AE4-48C6-AA16-D98D43DCEC80}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "System.Diagnostics.Runtime", "System.Diagnostics.Runtime\System.Diagnostics.Runtime.csproj", "{98F0126D-A296-4BFC-98DE-42AE0F2B3479}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.Diagnostics.Runtime", "System.Diagnostics.Runtime\System.Diagnostics.Runtime.csproj", "{98F0126D-A296-4BFC-98DE-42AE0F2B3479}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "System.Diagnostics.Runtime.Tests", "System.Diagnostics.Runtime.Tests\System.Diagnostics.Runtime.Tests.csproj", "{79CA51B5-F49F-4D16-93A4-A03B896AD4B5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.Diagnostics.Runtime.Tests", "System.Diagnostics.Runtime.Tests\System.Diagnostics.Runtime.Tests.csproj", "{79CA51B5-F49F-4D16-93A4-A03B896AD4B5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetFrameworkExample", "NetFrameworkExample\NetFrameworkExample.csproj", "{9F0CA4B5-0E94-418B-A077-566E9F57B81D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetFrameworkExample", "NetFrameworkExample\NetFrameworkExample.csproj", "{9F0CA4B5-0E94-418B-A077-566E9F57B81D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		NoVariablesDefault|Any CPU = NoVariablesDefault|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{4C331DC3-1AE4-48C6-AA16-D98D43DCEC80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4C331DC3-1AE4-48C6-AA16-D98D43DCEC80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C331DC3-1AE4-48C6-AA16-D98D43DCEC80}.NoVariablesDefault|Any CPU.ActiveCfg = Release|Any CPU
+		{4C331DC3-1AE4-48C6-AA16-D98D43DCEC80}.NoVariablesDefault|Any CPU.Build.0 = Release|Any CPU
 		{4C331DC3-1AE4-48C6-AA16-D98D43DCEC80}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4C331DC3-1AE4-48C6-AA16-D98D43DCEC80}.Release|Any CPU.Build.0 = Release|Any CPU
 		{98F0126D-A296-4BFC-98DE-42AE0F2B3479}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{98F0126D-A296-4BFC-98DE-42AE0F2B3479}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{98F0126D-A296-4BFC-98DE-42AE0F2B3479}.NoVariablesDefault|Any CPU.ActiveCfg = Release|Any CPU
+		{98F0126D-A296-4BFC-98DE-42AE0F2B3479}.NoVariablesDefault|Any CPU.Build.0 = Release|Any CPU
 		{98F0126D-A296-4BFC-98DE-42AE0F2B3479}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{98F0126D-A296-4BFC-98DE-42AE0F2B3479}.Release|Any CPU.Build.0 = Release|Any CPU
 		{79CA51B5-F49F-4D16-93A4-A03B896AD4B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{79CA51B5-F49F-4D16-93A4-A03B896AD4B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79CA51B5-F49F-4D16-93A4-A03B896AD4B5}.NoVariablesDefault|Any CPU.ActiveCfg = Release|Any CPU
+		{79CA51B5-F49F-4D16-93A4-A03B896AD4B5}.NoVariablesDefault|Any CPU.Build.0 = Release|Any CPU
 		{79CA51B5-F49F-4D16-93A4-A03B896AD4B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{79CA51B5-F49F-4D16-93A4-A03B896AD4B5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9F0CA4B5-0E94-418B-A077-566E9F57B81D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9F0CA4B5-0E94-418B-A077-566E9F57B81D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F0CA4B5-0E94-418B-A077-566E9F57B81D}.NoVariablesDefault|Any CPU.ActiveCfg = Release|Any CPU
+		{9F0CA4B5-0E94-418B-A077-566E9F57B81D}.NoVariablesDefault|Any CPU.Build.0 = Release|Any CPU
 		{9F0CA4B5-0E94-418B-A077-566E9F57B81D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F0CA4B5-0E94-418B-A077-566E9F57B81D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection

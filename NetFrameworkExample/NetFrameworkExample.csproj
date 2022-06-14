@@ -10,8 +10,10 @@
     <Compile Include="../AspNetCoreExample/MeterProviderBuilderExtensions.cs" />
     <Compile Include="../AspNetCoreExample/Simulate.cs" />
 
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="*-*" />
     <PackageReference Include="OpenTelemetry.Exporter.Prometheus" Version="*-*" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="*-*" />
 
     <ProjectReference Include="..\System.Diagnostics.Runtime\System.Diagnostics.Runtime.csproj" />
   </ItemGroup>

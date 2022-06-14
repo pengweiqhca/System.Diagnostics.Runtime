@@ -9,11 +9,7 @@ builder.Services.AddMvc();
 
 builder.Services.AddHttpClient();
 
-var app = builder.Build();
-
-app.UseDeveloperExceptionPage();
-
-app.UseOpenTelemetryPrometheusScrapingEndpoint(Sdk.CreateMeterProviderBuilder()
+builder.Services.AddSingleton(Sdk.CreateMeterProviderBuilder()
     .AddRuntimeInstrumentation()
     .AddView(instrument =>
         instrument.Name is "process.runtime.dotnet.gc.collection.seconds" or "process.runtime.dotnet.gc.pause.seconds"
@@ -21,6 +17,12 @@ app.UseOpenTelemetryPrometheusScrapingEndpoint(Sdk.CreateMeterProviderBuilder()
             : null)
     .AddPrometheusExporter()
     .Build());
+
+var app = builder.Build();
+
+app.UseDeveloperExceptionPage();
+
+app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
 app.UseMetricServer("/prometheus");
 

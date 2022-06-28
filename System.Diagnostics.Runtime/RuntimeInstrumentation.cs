@@ -197,7 +197,7 @@ public class RuntimeInstrumentation : IDisposable
     private static void ExceptionsInstrumentation(Meter meter, RuntimeMetricsOptions options)
     {
         var exceptionCounter = meter.CreateCounter<long>(
-            $"{options.MetricPrefix}exception.count",
+            $"{options.MetricPrefix}exception.total",
             description: "Count of exceptions that have been thrown in managed code, since the observation started. The value will be unavailable until an exception has been thrown after OpenTelemetry.Instrumentation.Runtime initialization.");
 
         AppDomain.CurrentDomain.FirstChanceException += (_, args) =>

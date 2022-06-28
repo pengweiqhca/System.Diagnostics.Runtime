@@ -97,21 +97,12 @@ public class RuntimeInstrumentation : IDisposable
             DnsInstrumentation(meter, options, parser);
         }
 #endif
-        if (options.IsExceptionsEnabled)
-        {
-#if NETFRAMEWORK
-            ExceptionsInstrumentation(meter, options, CreateEtwParser());
-#else
-            ExceptionsInstrumentation(meter, options, CreateSystemRuntimeEventParser(), CreateNativeRuntimeEventParser());
-#endif
-        }
+        if (options.IsExceptionsEnabled) ExceptionsInstrumentation(meter, options);
 
         if (options.IsGcEnabled)
         {
 #if NETCOREAPP
-            GcInstrumentation(meter, options,
-                CreateSystemRuntimeEventParser(),
-                CreateNativeRuntimeEventParser());
+            GcInstrumentation(meter, options, CreateSystemRuntimeEventParser(), CreateNativeRuntimeEventParser());
 #else
             GcInstrumentation(meter, options, CreateEtwParser());
 #endif
@@ -203,36 +194,18 @@ public class RuntimeInstrumentation : IDisposable
         meter.CreateObservableCounter($"{options.MetricPrefix}dns.duration.total", () => dnsLookupsDuration, "ms", "The sum of dns lookup durations");
     }
 #endif
-    private static void ExceptionsInstrumentation(Meter meter, RuntimeMetricsOptions options,
-#if NETCOREAPP
-        SystemRuntimeEventParser.Events.CountersV3_0? runtimeCounters,
-#endif
-        NativeEvent.INativeEvent? exceptionError)
+    private static void ExceptionsInstrumentation(Meter meter, RuntimeMetricsOptions options)
     {
-        if (exceptionError != null)
-        {
-            var exceptionCount = meter.CreateCounter<long>(
-                $"{options.MetricPrefix}exception.total",
-                description: "Count of exceptions thrown, broken down by type");
+        var exceptionCounter = meter.CreateCounter<long>(
+            $"{options.MetricPrefix}exception.count",
+            description: "Count of exceptions that have been thrown in managed code, since the observation started. The value will be unavailable until an exception has been thrown after OpenTelemetry.Instrumentation.Runtime initialization.");
 
-            exceptionError.ExceptionThrown += e => exceptionCount.Add(1, CreateTag(LabelType, e.ExceptionType));
-        }
-#if NETCOREAPP
-        else if (runtimeCounters != null)
+        AppDomain.CurrentDomain.FirstChanceException += (_, args) =>
         {
-            var exceptionCount = meter.CreateCounter<long>(
-                $"{options.MetricPrefix}exception.total",
-                description: "Count of exceptions thrown");
+            var type = args.Exception.GetType();
 
-            runtimeCounters.ExceptionCount += e => exceptionCount.Add((long)e.IncrementedBy);
-        }
-        else if (typeof(Exception).GetMethod("GetExceptionCount",
-                     BindingFlags.Static | BindingFlags.NonPublic)?.CreateDelegate(typeof(Func<uint>)) is Func<uint> func)
-            meter.CreateObservableCounter<long>(
-                $"{options.MetricPrefix}exception.total",
-                () => func(),
-                description: "Count of exceptions thrown");
-#endif
+            exceptionCounter.Add(1, CreateTag(LabelType, type.FullName ?? type.Name));
+        };
     }
 
     private static void GcInstrumentation(Meter meter, RuntimeMetricsOptions options,

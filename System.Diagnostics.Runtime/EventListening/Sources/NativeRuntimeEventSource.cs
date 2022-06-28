@@ -236,7 +236,6 @@ public class NativeRuntimeEventSource
         public const int IoThreadRetire = 46;
         public const int IoThreadUnretire = 47;
         public const int ThreadPoolAdjustment = 55;
-        public const int ExceptionThrown = 80;
         public const int ContentionStart = 81;
         public const int ContentionStop = 91;
         public const int PerHeapHistory = 204;

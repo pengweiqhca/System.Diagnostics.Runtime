@@ -5,7 +5,7 @@
     <Authors>Wei Peng</Authors>
     <Copyright>Copyright © 2022</Copyright>
     <DebugSymbols>true</DebugSymbols>
-    <Description>Exposes .NET runtime metrics (GC, JIT, lock contention, thread pool, exceptions) using the prometheus-net package.</Description>
+    <Description>Exposes .NET runtime metrics (GC, JIT, lock contention, thread pool, exceptions).</Description>
     <IncludeSymbols>True</IncludeSymbols>
     <PackageId>PW.Diagnostics.Runtime</PackageId>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -15,7 +15,7 @@
     <RepositoryType>git</RepositoryType>
     <TargetFrameworks>net6.0;netcoreapp3.1;net471</TargetFrameworks>
     <SignAssembly>True</SignAssembly>
-    <Version>1.3.2</Version>
+    <Version>1.4.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,7 +33,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
-    <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="2.0.76" />
+    <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.0.1" />
 
     <Reference Include="System.Net.Http" />
   </ItemGroup>

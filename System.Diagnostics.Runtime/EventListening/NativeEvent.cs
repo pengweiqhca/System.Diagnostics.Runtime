@@ -9,7 +9,6 @@ public static class NativeEvent
     {
         event Action<ContentionEndEvent> ContentionEnd;
         event Action<HeapStatsEvent> HeapStats;
-        event Action<ExceptionThrownEvent> ExceptionThrown;
         event Action<PauseCompleteEvent> PauseComplete;
         event Action<CollectionStartEvent> CollectionStart;
         event Action<CollectionCompleteEvent> CollectionComplete;
@@ -24,8 +23,6 @@ public static class NativeEvent
     }
 
     public record struct ContentionEndEvent(TimeSpan ContentionDuration);
-
-    public record struct ExceptionThrownEvent(string? ExceptionType);
 
     public record struct HeapStatsEvent
     {

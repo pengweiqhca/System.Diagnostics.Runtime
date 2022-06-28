@@ -63,7 +63,6 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
         }
 
         _session.Source.Clr.ContentionStop += ContentionStop;
-        _session.Source.Clr.ExceptionStart += ExceptionStart;
         _session.Source.Clr.GCHeapStats += GCHeapStats;
         _session.Source.Clr.GCSuspendEEStart += GCSuspendEEStart;
         _session.Source.Clr.GCRestartEEStop += GCRestartEEStop;
@@ -103,7 +102,6 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
                         NativeRuntimeEventSource.EventId.IoThreadRetire,
                         NativeRuntimeEventSource.EventId.IoThreadUnretire,
                         NativeRuntimeEventSource.EventId.ThreadPoolAdjustment,
-                        NativeRuntimeEventSource.EventId.ExceptionThrown,
                         NativeRuntimeEventSource.EventId.ContentionStart,
                         NativeRuntimeEventSource.EventId.ContentionStop,
                         NativeRuntimeEventSource.EventId.PerHeapHistory,
@@ -114,7 +112,6 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
         {
             _session.Source.Clr.ContentionStart -= ContentionStart;
             _session.Source.Clr.ContentionStop -= ContentionStop;
-            _session.Source.Clr.ExceptionStart -= ExceptionStart;
             _session.Source.Clr.GCHeapStats -= GCHeapStats;
             _session.Source.Clr.GCSuspendEEStart -= GCSuspendEEStart;
             _session.Source.Clr.GCRestartEEStop -= GCRestartEEStop;
@@ -135,7 +132,6 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
 
             _session.Source.Clr.ContentionStart -= ContentionStart;
             _session.Source.Clr.ContentionStop -= ContentionStop;
-            _session.Source.Clr.ExceptionStart -= ExceptionStart;
             _session.Source.Clr.GCHeapStats -= GCHeapStats;
             _session.Source.Clr.GCSuspendEEStart -= GCSuspendEEStart;
             _session.Source.Clr.GCRestartEEStop -= GCRestartEEStop;
@@ -150,7 +146,6 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
     }
 
     public event Action<NativeEvent.ContentionEndEvent>? ContentionEnd;
-    public event Action<NativeEvent.ExceptionThrownEvent>? ExceptionThrown;
     public event Action<NativeEvent.HeapStatsEvent>? HeapStats;
     public event Action<NativeEvent.PauseCompleteEvent>? PauseComplete;
     public event Action<NativeEvent.CollectionStartEvent>? CollectionStart;
@@ -175,14 +170,6 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
             duration > TimeSpan.Zero &&
             ContentionEnd is { } func)
             func(new(duration));
-    }
-
-    private void ExceptionStart(ExceptionTraceData data)
-    {
-        if (data.ProcessID != ProcessId || data.ExceptionFlags.HasFlag(ExceptionThrownFlags.ReThrown)) return;
-
-        if (ExceptionThrown is { } func)
-            func(new(data.ExceptionType));
     }
 
     private void GCHeapStats(GCHeapStatsTraceData data)

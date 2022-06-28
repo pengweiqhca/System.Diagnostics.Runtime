@@ -1,4 +1,4 @@
-﻿# Metrics exposed
+# Metrics exposed
 
 > ☑️ Need set `EnabledNativeRuntime = true`
 
@@ -10,8 +10,7 @@
 | dns        | `dns.requested.total`                            | Counter | | The total number of dns lookup requests                                                                                          | |  | | ✅ |
 | dns        | `dns.current.count`                              | Gauge | | The total number of current dns lookups                                                                                          | |  |  | ✅ |
 | dns        | `dns.duration.total`                             | Counter | ms | The sum of dns lookup durations                                                                                                  | |  |  | ✅ |
-| exception  | `exception.total`                                | Counter | | Count of exceptions thrown                                                                                                       | |  | ✅ | ️✅ |
-| exception  | `exception.total`                                | Counter |  | Count of exceptions thrown, broken down by type                                                                                  | type | ☑️ | ☑️ | ☑️ |
+| exception  | `exception.total`                                | Counter |  | Count of exceptions that have been thrown in managed code, since the observation started. The value will be unavailable until an exception has been thrown after System.Diagnostics.Runtime initialization.                                                                                  | type | ✅ | ✅ | ✅ |
 | gc         | `gc.allocated.total`                             | Counter | B | Allocation bytes since process start                                                                                             | |  | ✅ | ✅ |
 | gc | `gc.allocated.total` | Counter | B | Allocation bytes since process start | gc.heap | ☑️ | ☑️ | ☑️ |
 | gc         | `gc.fragmentation`                               | Gauge | % | GC fragmentation                                                                                                                 | |  | ✅ | ✅ |

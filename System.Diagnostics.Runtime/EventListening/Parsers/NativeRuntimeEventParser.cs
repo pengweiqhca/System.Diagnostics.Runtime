@@ -29,7 +29,6 @@ public class NativeRuntimeEventParser : IEventParser<NativeRuntimeEventParser>,
         _ => 1);
 
     public event Action<NativeEvent.ContentionEndEvent>? ContentionEnd;
-    public event Action<NativeEvent.ExceptionThrownEvent>? ExceptionThrown;
     public event Action<NativeEvent.HeapStatsEvent>? HeapStats;
     public event Action<NativeEvent.PauseCompleteEvent>? PauseComplete;
     public event Action<NativeEvent.CollectionStartEvent>? CollectionStart;
@@ -61,10 +60,6 @@ public class NativeRuntimeEventParser : IEventParser<NativeRuntimeEventParser>,
             }
             case NativeRuntimeEventSource.EventId.HeapStats:
                 HeapStats?.Invoke(new(e));
-
-                return;
-            case NativeRuntimeEventSource.EventId.ExceptionThrown:
-                ExceptionThrown?.Invoke(new((string?)e.Payload?[0]));
 
                 return;
             case NativeRuntimeEventSource.EventId.ContentionStart:

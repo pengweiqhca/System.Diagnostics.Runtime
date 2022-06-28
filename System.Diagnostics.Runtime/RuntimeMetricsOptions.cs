@@ -20,10 +20,10 @@ public class RuntimeMetricsOptions
     /// </summary>
     public bool? ContentionEnabled { get; set; }
 #if NET6_0_OR_GREATER
-        /// <summary>
-        /// Gets or sets a value indicating whether dns metrics should be collected.
-        /// </summary>
-        public bool? DnsEnabled { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether dns metrics should be collected.
+    /// </summary>
+    public bool? DnsEnabled { get; set; }
 #endif
     /// <summary>
     /// Gets or sets a value indicating whether exception metrics should be collected.
@@ -36,10 +36,10 @@ public class RuntimeMetricsOptions
     public bool? GcEnabled { get; set; }
 
 #if NET6_0_OR_GREATER
-        /// <summary>
-        /// Gets or sets a value indicating whether jitter metrics should be collected.
-        /// </summary>
-        public bool? JitEnabled { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether jitter metrics should be collected.
+    /// </summary>
+    public bool? JitEnabled { get; set; }
 #endif
 
     /// <summary>
@@ -48,10 +48,10 @@ public class RuntimeMetricsOptions
     public bool? ProcessEnabled { get; set; }
 
 #if NET6_0_OR_GREATER
-        /// <summary>
-        /// Gets or sets a value indicating whether sockets metrics should be collected.
-        /// </summary>
-        public bool? SocketsEnabled { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether sockets metrics should be collected.
+    /// </summary>
+    public bool? SocketsEnabled { get; set; }
 #endif
     /// <summary>
     /// Gets or sets a value indicating whether threading metrics should be collected.
@@ -59,20 +59,20 @@ public class RuntimeMetricsOptions
     public bool? ThreadingEnabled { get; set; }
 
     private bool IsAllEnabled => AssembliesEnabled == null
-                                 && ContentionEnabled == null
+        && ContentionEnabled == null
 #if NET6_0_OR_GREATER
-                                     && DnsEnabled == null
+        && DnsEnabled == null
 #endif
-                                 && ExceptionsEnabled == null
-                                 && GcEnabled == null
+        && ExceptionsEnabled == null
+        && GcEnabled == null
 #if NET6_0_OR_GREATER
-                                     && JitEnabled == null
+        && JitEnabled == null
 #endif
-                                 && ProcessEnabled == null
+        && ProcessEnabled == null
 #if NET6_0_OR_GREATER
-                                     && SocketsEnabled == null
+        && SocketsEnabled == null
 #endif
-                                 && ThreadingEnabled == null;
+        && ThreadingEnabled == null;
 
     /// <summary>
     /// Gets a value indicating whether assembly metrics is enabled.
@@ -85,10 +85,10 @@ public class RuntimeMetricsOptions
     internal bool IsContentionEnabled => ContentionEnabled == true || IsAllEnabled;
 
 #if NET6_0_OR_GREATER
-        /// <summary>
-        /// Gets a value indicating whether dns metrics is enabled.
-        /// </summary>
-        internal bool IsDnsEnabled => DnsEnabled == true || IsAllEnabled;
+    /// <summary>
+    /// Gets a value indicating whether dns metrics is enabled.
+    /// </summary>
+    internal bool IsDnsEnabled => DnsEnabled == true || IsAllEnabled;
 #endif
     /// <summary>
     /// Gets a value indicating whether exception metrics is enabled.
@@ -101,10 +101,10 @@ public class RuntimeMetricsOptions
     internal bool IsGcEnabled => GcEnabled == true || IsAllEnabled;
 
 #if NET6_0_OR_GREATER
-        /// <summary>
-        /// Gets a value indicating whether jitter metrics is enabled.
-        /// </summary>
-        internal bool IsJitEnabled => JitEnabled == true || IsAllEnabled;
+    /// <summary>
+    /// Gets a value indicating whether jitter metrics is enabled.
+    /// </summary>
+    internal bool IsJitEnabled => JitEnabled == true || IsAllEnabled;
 #endif
 
     /// <summary>
@@ -113,11 +113,11 @@ public class RuntimeMetricsOptions
     internal bool IsProcessEnabled => ProcessEnabled == true || IsAllEnabled;
 
 #if NET6_0_OR_GREATER
-        /// <summary>
-        /// Gets a value indicating whether sockets metrics is enabled.
-        /// </summary>
-        internal bool IsSocketsEnabled =>
-            SocketsEnabled == true || IsAllEnabled;
+    /// <summary>
+    /// Gets a value indicating whether sockets metrics is enabled.
+    /// </summary>
+    internal bool IsSocketsEnabled =>
+        SocketsEnabled == true || IsAllEnabled;
 #endif
 
     /// <summary>
@@ -131,11 +131,11 @@ public class RuntimeMetricsOptions
     /// <remarks>If true, metrics will include more detail info.</remarks>
     public bool EnabledNativeRuntime { get; set; }
 #if NETCOREAPP
-        /// <summary>
-        /// Gets or sets a value indicating whether enable listen system runtime event source.
-        /// </summary>
-        /// <remarks>If true, metrics will include more detail info.</remarks>
-        public bool EnabledSystemRuntime { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether enable listen system runtime event source.
+    /// </summary>
+    /// <remarks>If true, metrics will include more detail info.</remarks>
+    public bool EnabledSystemRuntime { get; set; }
 #else
     /// <summary>
     /// Gets or sets the name of the session to open. Should be unique across the machine.

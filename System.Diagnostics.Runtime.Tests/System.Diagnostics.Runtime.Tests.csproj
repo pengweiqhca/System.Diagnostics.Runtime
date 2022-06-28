@@ -8,11 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="fasterflect" Version="3.0.0" />
+    <PackageReference Include="fasterflect" Version="3.*" />
     <PackageReference Include="IsExternalInit" Version="1.*" PrivateAssets="All" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
-    <PackageReference Include="nunit" Version="3.13.2" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
+    <PackageReference Include="nunit" Version="3.*" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.*" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
   </ItemGroup>
 
   <ItemGroup>

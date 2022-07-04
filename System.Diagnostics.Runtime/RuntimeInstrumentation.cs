@@ -434,7 +434,7 @@ public class RuntimeInstrumentation : IDisposable
         meter.CreateObservableGauge("process.cpu.usage",
             RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
                 ? CpuUtilization.GetCpuUsage
-                : new Func<int>(ProcessTimes.GetCpuUsage),
+                : new Func<double>(ProcessTimes.GetCpuUsage),
             "%", "CPU usage");
 
         meter.CreateObservableGauge("process.handle.count", () => Process.GetCurrentProcess().HandleCount, description: "Process handle count");

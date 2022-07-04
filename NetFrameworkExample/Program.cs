@@ -4,6 +4,17 @@ using NetFrameworkExample;
 using System.Diagnostics.Runtime;
 using OpenTelemetry.Metrics;
 
+_ = Task.Run(() =>
+{
+    var obj = new object();
+
+    while (true)
+    {
+        lock (obj)
+            _ = DateTime.Now;
+    }
+});
+
 await new HostBuilder().ConfigureServices(services => services
         .AddHostedService<HttpListenerHostedService>()
         .AddOpenTelemetryMetrics(builder => builder.AddRuntimeInstrumentation().AddView(instrument =>

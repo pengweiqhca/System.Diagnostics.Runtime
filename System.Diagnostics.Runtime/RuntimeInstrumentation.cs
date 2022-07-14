@@ -6,6 +6,7 @@ using System.Diagnostics.Runtime.Util;
 using System.Diagnostics.Tracing;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 
 namespace System.Diagnostics.Runtime;
@@ -80,13 +81,11 @@ public class RuntimeInstrumentation : IDisposable
         }
 #endif
         if (options.IsContentionEnabled)
-        {
 #if NETFRAMEWORK
             ContentionInstrumentation(meter, options, CreateEtwParser());
 #else
             ContentionInstrumentation(meter, options, CreateNativeRuntimeEventParser());
 #endif
-        }
 #if NET6_0_OR_GREATER
         if (options.IsDnsEnabled)
         {
@@ -97,16 +96,13 @@ public class RuntimeInstrumentation : IDisposable
             DnsInstrumentation(meter, options, parser);
         }
 #endif
-        if (options.IsExceptionsEnabled) ExceptionsInstrumentation(meter, options);
-
+        if (options.IsExceptionsEnabled) disposables.Add(ExceptionsInstrumentation(meter, options));
         if (options.IsGcEnabled)
-        {
 #if NETCOREAPP
             GcInstrumentation(meter, options, CreateSystemRuntimeEventParser(), CreateNativeRuntimeEventParser());
 #else
             GcInstrumentation(meter, options, CreateEtwParser());
 #endif
-        }
 #if NET6_0_OR_GREATER
         if (options.IsJitEnabled) JitInstrumentation(meter, options);
 #endif
@@ -194,18 +190,23 @@ public class RuntimeInstrumentation : IDisposable
         meter.CreateObservableCounter($"{options.MetricPrefix}dns.duration.total", () => dnsLookupsDuration, "ms", "The sum of dns lookup durations");
     }
 #endif
-    private static void ExceptionsInstrumentation(Meter meter, RuntimeMetricsOptions options)
+    private static IDisposable ExceptionsInstrumentation(Meter meter, RuntimeMetricsOptions options)
     {
         var exceptionCounter = meter.CreateCounter<long>(
             $"{options.MetricPrefix}exception.total",
             description: "Count of exceptions that have been thrown in managed code, since the observation started. The value will be unavailable until an exception has been thrown after OpenTelemetry.Instrumentation.Runtime initialization.");
 
-        AppDomain.CurrentDomain.FirstChanceException += (_, args) =>
+        // ReSharper disable once ConvertToLocalFunction
+        EventHandler<FirstChanceExceptionEventArgs> firstChanceException = (_, args) =>
         {
             var type = args.Exception.GetType();
 
             exceptionCounter.Add(1, CreateTag(LabelType, type.FullName ?? type.Name));
         };
+
+        AppDomain.CurrentDomain.FirstChanceException += firstChanceException;
+
+        return new DisposableAction(() => AppDomain.CurrentDomain.FirstChanceException -= firstChanceException);
     }
 
     private static void GcInstrumentation(Meter meter, RuntimeMetricsOptions options,
@@ -570,5 +571,14 @@ public class RuntimeInstrumentation : IDisposable
     {
         foreach (var disposable in _disposables)
             disposable.Dispose();
+    }
+
+    private class DisposableAction : IDisposable
+    {
+        private Action? _action;
+
+        public DisposableAction(Action action) => _action = action;
+
+        public void Dispose() => Interlocked.Exchange(ref _action, null)?.Invoke();
     }
 }

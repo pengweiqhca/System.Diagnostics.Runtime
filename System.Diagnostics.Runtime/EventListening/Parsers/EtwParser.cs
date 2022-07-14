@@ -25,7 +25,7 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
     {
         try
         {
-            _session = new TraceEventSession(etwSessionName, TraceEventSessionOptions.Attach);
+            _session = new(etwSessionName, TraceEventSessionOptions.Attach);
 
             _session.Dispose(); // Try delete the exits session.
         }
@@ -34,7 +34,7 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
             // ignored
         }
 
-        _session = new TraceEventSession(etwSessionName,
+        _session = new(etwSessionName,
             TraceEventSessionOptions.Create |
             TraceEventSessionOptions.NoRestartOnCreate |
             TraceEventSessionOptions.NoPerProcessorBuffering);
@@ -46,7 +46,7 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
         {
             _session.Dispose(); // Try delete the exits session.
 
-            _session = new TraceEventSession(etwSessionName,
+            _session = new(etwSessionName,
                 TraceEventSessionOptions.Create |
                 TraceEventSessionOptions.NoRestartOnCreate |
                 TraceEventSessionOptions.NoPerProcessorBuffering);

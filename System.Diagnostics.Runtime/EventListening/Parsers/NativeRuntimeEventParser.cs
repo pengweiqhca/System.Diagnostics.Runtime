@@ -20,7 +20,7 @@ public class NativeRuntimeEventParser : IEventParser<NativeRuntimeEventParser>,
         NativeRuntimeEventSource.EventId.GcStart,
         NativeRuntimeEventSource.EventId.GcStop,
         x => (uint)x.Payload![0]!,
-        x => new GcData((uint)x.Payload![1]!, (NativeRuntimeEventSource.GCType)x.Payload![3]!));
+        x => new((uint)x.Payload![1]!, (NativeRuntimeEventSource.GCType)x.Payload![3]!));
 
     private readonly EventPairTimer<int> _gcPauseEventTimer = new(
         NativeRuntimeEventSource.EventId.SuspendEEStart,

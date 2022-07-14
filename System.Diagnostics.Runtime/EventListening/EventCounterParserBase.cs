@@ -30,11 +30,11 @@ public abstract class EventCounterParserBase<T> : IEventCounterParser<T>
             .ToArray();
 
         if (eventsAndNameAttrs.Length == 0)
-            throw new Exception("Could not locate any events to map to event counters!");
+            throw new("Could not locate any events to map to event counters!");
 
         var eventsWithoutAttrs = eventsAndNameAttrs.Where(x => x.nameAttr == null).ToArray();
         if (eventsWithoutAttrs.Length > 0)
-            throw new Exception($"All events part of an {nameof(ICounterEvents)} interface require a [{nameof(CounterNameAttribute)}] attribute. Events without attribute: {string.Join(", ", eventsWithoutAttrs.Select(x => x.@event.Name))}.");
+            throw new($"All events part of an {nameof(ICounterEvents)} interface require a [{nameof(CounterNameAttribute)}] attribute. Events without attribute: {string.Join(", ", eventsWithoutAttrs.Select(x => x.@event.Name))}.");
 
         _countersToParsers = eventsAndNameAttrs.ToDictionary(
             k => k.nameAttr!.Name,
@@ -64,7 +64,7 @@ public abstract class EventCounterParserBase<T> : IEventCounterParser<T>
         var eventField = GetType().GetField(@event.Name, BindingFlags.NonPublic | BindingFlags.Instance);
 
         if (eventField == null || @event.EventHandlerType == null)
-            throw new Exception($"Unable to locate backing field for event '{@event.Name}'.");
+            throw new($"Unable to locate backing field for event '{@event.Name}'.");
 
         var type = @event.EventHandlerType.GetGenericArguments().Single();
 
@@ -73,7 +73,7 @@ public abstract class EventCounterParserBase<T> : IEventCounterParser<T>
                 ? TryParseIncrementingCounter
                 : type == typeof(MeanCounterValue)
                     ? TryParseCounter
-                    : throw new Exception($"Unexpected counter type '{type}'!");
+                    : throw new($"Unexpected counter type '{type}'!");
 
         return payload =>
         {
@@ -97,12 +97,12 @@ public abstract class EventCounterParserBase<T> : IEventCounterParser<T>
 
     private static (bool, object) TryParseIncrementingCounter(IDictionary<string, object> payload) =>
         payload.TryGetValue("Increment", out var increment)
-            ? (true, new IncrementingCounterValue((double)increment))
+            ? (true, new((double)increment))
             : (false, new IncrementingCounterValue());
 
     private static (bool, object) TryParseCounter(IDictionary<string, object> payload) =>
         payload.TryGetValue("Mean", out var mean) && payload.TryGetValue("Count", out var count)
-            ? (true, new MeanCounterValue((int)count, (double)mean))
+            ? (true, new((int)count, (double)mean))
             : (false, new MeanCounterValue());
 
     public void Dispose() { }

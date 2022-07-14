@@ -18,8 +18,8 @@ public sealed class Cache<TKey, TValue> : IDisposable where TKey : notnull where
         if (expireItemsAfter == TimeSpan.Zero)
             throw new ArgumentNullException(nameof(expireItemsAfter));
 
-        _cache = new ConcurrentDictionary<TKey, CacheValue<TValue>>(Environment.ProcessorCount, initialCapacity);
-        _cancellationSource = new CancellationTokenSource();
+        _cache = new(Environment.ProcessorCount, initialCapacity);
+        _cancellationSource = new();
 
         Task.Run(async () =>
         {

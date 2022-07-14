@@ -33,7 +33,7 @@ public class Given_An_Implementation_Of_EventCounterParserBaseTest_That_Has_Deco
     [SetUp]
     public void SetUp()
     {
-        _parser = new DummyTypeEventCounterParser();
+        _parser = new();
     }
 
     [Test]

@@ -18,7 +18,7 @@ public abstract class IntegrationTestBase
 #if NETFRAMEWORK
         Options.EtwSessionName = "System.Diagnostics.Runtime.Tests.IntegrationTests";
 #endif
-        _instrumentation = new RuntimeInstrumentation(Options);
+        _instrumentation = new(Options);
     }
 
     [TearDown]

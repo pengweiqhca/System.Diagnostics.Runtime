@@ -12,7 +12,7 @@ public class Given_An_EventPairTimer_That_Samples_Every_Event : EventPairTimerBa
     [SetUp]
     public void SetUp()
     {
-        _eventPairTimer = new EventPairTimer<long>(EventIdStart, EventIdEnd, x => (long)x.Payload![0]!);
+        _eventPairTimer = new(EventIdStart, EventIdEnd, x => (long)x.Payload![0]!);
     }
 
     [Test]

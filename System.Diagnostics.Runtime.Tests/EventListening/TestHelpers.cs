@@ -42,7 +42,7 @@ public class TestHelpers
 
     public static EventAssertion<T> ArrangeEventAssertion<T>(Action<Action<T>> wireUp)
     {
-        return new EventAssertion<T>(wireUp);
+        return new(wireUp);
     }
 
     public class EventAssertion<T>
@@ -53,7 +53,7 @@ public class TestHelpers
         }
 
         public bool Fired => History.Count > 0;
-        public List<T> History { get; } = new List<T>();
+        public List<T> History { get; } = new();
         public T LastEvent => History.Last();
 
     }

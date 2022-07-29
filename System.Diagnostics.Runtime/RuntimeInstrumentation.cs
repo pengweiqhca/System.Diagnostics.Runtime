@@ -333,6 +333,24 @@ public class RuntimeInstrumentation : IDisposable
                 runtimeCounters.PohSize += e => heapSize.PohSizeBytes = (long)e.Mean;
 #endif
             }
+#if NET6_0_OR_GREATER
+            else if (Environment.Version.Major > 6)
+                meter.CreateObservableGauge($"{options.MetricPrefix}gc.heap.size",
+                    () =>
+                    {
+                        var generationInfo = GC.GetGCMemoryInfo().GenerationInfo;
+
+                        return new[]
+                        {
+                            CreateMeasurement(generationInfo[0].SizeAfterBytes, LabelGeneration, "0"),
+                            CreateMeasurement(generationInfo[1].SizeAfterBytes, LabelGeneration, "1"),
+                            CreateMeasurement(generationInfo[2].SizeAfterBytes, LabelGeneration, "2"),
+                            CreateMeasurement(generationInfo[3].SizeAfterBytes, LabelGeneration, "loh"),
+                            CreateMeasurement(generationInfo[4].SizeAfterBytes, LabelGeneration, "poh")
+                        };
+                    },
+                    "B", "The current size of all heaps (only updated after a garbage collection)");
+#endif
             else if (typeof(GC).GetMethod("GetGenerationSize", BindingFlags.Static | BindingFlags.NonPublic)?
                          .CreateDelegate(typeof(Func<int, ulong>)) is Func<int, ulong> func)
                 meter.CreateObservableGauge($"{options.MetricPrefix}gc.heap.size",

@@ -5,10 +5,10 @@
     <Authors>Wei Peng</Authors>
     <Copyright>Copyright © 2022</Copyright>
     <DebugSymbols>true</DebugSymbols>
+    <DebugType>embedded</DebugType>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <GeneratePackageOnBuild Condition="'$(Configuration)' == 'Release'">True</GeneratePackageOnBuild>
     <ImplicitUsings>enable</ImplicitUsings>
-    <IncludeSymbols>True</IncludeSymbols>
     <LangVersion>10.0</LangVersion>
     <NoWarn>1591</NoWarn>
     <Nullable>enable</Nullable>

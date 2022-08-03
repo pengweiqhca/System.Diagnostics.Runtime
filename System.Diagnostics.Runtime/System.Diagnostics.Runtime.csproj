@@ -4,9 +4,7 @@
     <AssemblyOriginatorKeyFile>..\Key.snk</AssemblyOriginatorKeyFile>
     <Authors>Wei Peng</Authors>
     <Copyright>Copyright © 2022</Copyright>
-    <DebugSymbols>true</DebugSymbols>
     <Description>Exposes .NET runtime metrics (GC, JIT, lock contention, thread pool, exceptions).</Description>
-    <IncludeSymbols>True</IncludeSymbols>
     <PackageId>PW.Diagnostics.Runtime</PackageId>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>

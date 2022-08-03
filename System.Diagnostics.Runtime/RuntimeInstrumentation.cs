@@ -447,7 +447,7 @@ public class RuntimeInstrumentation : IDisposable
 
         // Not yet official: https://github.com/open-telemetry/opentelemetry-specification/pull/2392
         meter.CreateObservableGauge("process.cpu.count", () => Environment.ProcessorCount, description: "The number of available logical CPUs");
-        meter.CreateObservableGauge("process.memory.usage", () => Environment.WorkingSet, "B", "The amount of physical memory in use");
+        meter.CreateObservableGauge("process.memory.usage", () => Process.GetCurrentProcess().WorkingSet64, "B", "The amount of physical memory in use");
         meter.CreateObservableGauge("process.memory.virtual", () => Process.GetCurrentProcess().VirtualMemorySize64, "B", "The amount of committed virtual memory");
 
         meter.CreateObservableGauge("process.cpu.usage",

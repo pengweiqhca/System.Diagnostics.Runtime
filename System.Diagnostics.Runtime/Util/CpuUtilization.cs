@@ -1,4 +1,4 @@
-namespace System.Diagnostics.Runtime.Util;
+﻿namespace System.Diagnostics.Runtime.Util;
 
 internal static class CpuUtilization
 {
@@ -20,7 +20,7 @@ internal static class CpuUtilization
 
         _prevCpuInfo = cpuInfo;
 
-        return cpuUsage / Environment.ProcessorCount;
+        return Math.Min(100.0, Math.Round(cpuUsage / Environment.ProcessorCount, 2));
     }
 }
 
@@ -53,6 +53,6 @@ internal static class ProcessTimes
         _prevSystemUserTime = systemUserTime;
         _prevSystemKernelTime = systemKernelTime;
 
-        return cpuUsage;
+        return Math.Min(100.0, Math.Round(cpuUsage, 2));
     }
 }

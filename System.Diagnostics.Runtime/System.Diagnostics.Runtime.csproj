@@ -13,7 +13,7 @@
     <RepositoryType>git</RepositoryType>
     <TargetFrameworks>net6.0;netcoreapp3.1;net471</TargetFrameworks>
     <SignAssembly>True</SignAssembly>
-    <Version>1.4.3</Version>
+    <Version>1.4.4</Version>
   </PropertyGroup>
 
   <ItemGroup>

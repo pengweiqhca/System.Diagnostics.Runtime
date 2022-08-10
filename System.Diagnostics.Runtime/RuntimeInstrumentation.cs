@@ -199,9 +199,16 @@ public class RuntimeInstrumentation : IDisposable
         // ReSharper disable once ConvertToLocalFunction
         EventHandler<FirstChanceExceptionEventArgs> firstChanceException = (_, args) =>
         {
-            var type = args.Exception.GetType();
+            try
+            {
+                var type = args.Exception.GetType();
 
-            exceptionCounter.Add(1, CreateTag(LabelType, type.FullName ?? type.Name));
+                exceptionCounter.Add(1, CreateTag(LabelType, type.FullName ?? type.Name));
+            }
+            catch
+            {
+                // ignored
+            }
         };
 
         AppDomain.CurrentDomain.FirstChanceException += firstChanceException;

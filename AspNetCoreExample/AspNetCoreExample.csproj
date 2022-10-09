@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="*-*" />
-    <PackageReference Include="OpenTelemetry.Exporter.Prometheus" Version="*-*" />
+    <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="*-*" />
     <PackageReference Include="prometheus-net.AspNetCore" Version="5.*" />
     <PackageReference Include="prometheus-net.DotNetRuntime" Version="4.*" />
 

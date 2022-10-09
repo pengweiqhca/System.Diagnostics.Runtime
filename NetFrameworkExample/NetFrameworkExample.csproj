@@ -12,7 +12,7 @@
 
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="*-*" />
-    <PackageReference Include="OpenTelemetry.Exporter.Prometheus" Version="*-*" />
+    <PackageReference Include="OpenTelemetry.Exporter.Prometheus.HttpListener" Version="*-*" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="*-*" />
 
     <ProjectReference Include="..\System.Diagnostics.Runtime\System.Diagnostics.Runtime.csproj" />

@@ -173,21 +173,27 @@ public class RuntimeInstrumentation : IDisposable
     {
         if (nameResolutionCounters == null) return;
 
-        var dnsLookupsRequested = 0L;
+        var dnsLookupsRequested = -1L;
         nameResolutionCounters.DnsLookupsRequested += e => dnsLookupsRequested = (long)e.Mean;
         meter.CreateObservableCounter($"{options.MetricPrefix}dns.requested.total",
-            () => dnsLookupsRequested,
+            () => dnsLookupsRequested < 0
+                ? Array.Empty<Measurement<long>>()
+                : new[] { new Measurement<long>(dnsLookupsRequested) },
             description: "The total number of dns lookup requests");
 
-        var currentDnsLookups = 0L;
+        var currentDnsLookups = -1L;
         nameResolutionCounters.CurrentDnsLookups += e => currentDnsLookups = (long)e.Mean;
         meter.CreateObservableGauge($"{options.MetricPrefix}dns.current.count",
-            () => currentDnsLookups,
+            () => currentDnsLookups < 0 ? Array.Empty<Measurement<long>>() : new[] { new Measurement<long>(currentDnsLookups) },
             description: "The total number of current dns lookups");
 
-        var dnsLookupsDuration = 0.0;
+        var dnsLookupsDuration = -1d;
         nameResolutionCounters.DnsLookupsDuration += e => dnsLookupsDuration = e.Total;
-        meter.CreateObservableCounter($"{options.MetricPrefix}dns.duration.total", () => dnsLookupsDuration, "ms", "The sum of dns lookup durations");
+        meter.CreateObservableCounter($"{options.MetricPrefix}dns.duration.total",
+            () => dnsLookupsDuration < 0
+                ? Array.Empty<Measurement<double>>()
+                : new[] { new Measurement<double>(dnsLookupsDuration) },
+            "ms", "The sum of dns lookup durations");
     }
 #endif
     private static IDisposable ExceptionsInstrumentation(Meter meter, RuntimeMetricsOptions options)
@@ -418,7 +424,7 @@ public class RuntimeInstrumentation : IDisposable
     private static void TimeInGc(Meter meter, RuntimeMetricsOptions options,
         SystemRuntimeEventParser.Events.CountersV3_0? runtimeCounters)
     {
-        Func<int> timeInGc;
+        Func<int>? timeInGc;
         if (runtimeCounters != null)
         {
             MeanCounterValue gcPause = default;
@@ -429,10 +435,10 @@ public class RuntimeInstrumentation : IDisposable
         }
         else
         {
-            timeInGc = (Func<int>)typeof(GC).GetMethod("GetLastGCPercentTimeInGC",
-                BindingFlags.Static | BindingFlags.NonPublic)?.CreateDelegate(typeof(Func<int>))!;
+            timeInGc = (Func<int>?)typeof(GC).GetMethod("GetLastGCPercentTimeInGC",
+                BindingFlags.Static | BindingFlags.NonPublic)?.CreateDelegate(typeof(Func<int>));
 
-            if (timeInGc == null!) return;
+            if (timeInGc == null) return;
         }
 
         meter.CreateObservableGauge($"{options.MetricPrefix}gc.pause.ratio", timeInGc, "%", "% Time in GC since last GC");
@@ -483,25 +489,33 @@ public class RuntimeInstrumentation : IDisposable
     {
         if (socketCounters == null) return;
 
-        var lastEstablishedOutgoing = 0.0;
+        var lastEstablishedOutgoing = -1d;
         socketCounters.OutgoingConnectionsEstablished += e => lastEstablishedOutgoing = e.Mean;
         meter.CreateObservableCounter($"{options.MetricPrefix}sockets.connections.established.outgoing.total",
-            () => lastEstablishedOutgoing,
+            () => lastEstablishedOutgoing < 0
+                ? Array.Empty<Measurement<double>>()
+                : new[] { new Measurement<double>(lastEstablishedOutgoing) },
             description: "The total number of outgoing established TCP connections");
 
-        var lastEstablishedIncoming = 0.0;
+        var lastEstablishedIncoming = -1d;
         socketCounters.IncomingConnectionsEstablished += e => lastEstablishedIncoming = e.Mean;
         meter.CreateObservableCounter($"{options.MetricPrefix}sockets.connections.established.incoming.total",
-            () => lastEstablishedIncoming,
+            () => lastEstablishedIncoming < 0
+                ? Array.Empty<Measurement<double>>()
+                : new[] { new Measurement<double>(lastEstablishedIncoming) },
             description: "The total number of incoming established TCP connections");
 
-        var lastReceived = 0.0;
+        var lastReceived = -1d;
         socketCounters.BytesReceived += e => lastReceived = e.Mean;
-        meter.CreateObservableCounter($"{options.MetricPrefix}sockets.bytes.received.total", () => lastReceived, "B", "The total number of bytes received over the network");
+        meter.CreateObservableCounter($"{options.MetricPrefix}sockets.bytes.received.total", () => lastReceived < 0
+            ? Array.Empty<Measurement<double>>()
+            : new[] { new Measurement<double>(lastReceived) }, "B", "The total number of bytes received over the network");
 
-        var lastSent = 0.0;
+        var lastSent = -1d;
         socketCounters.BytesSent += e => lastSent = e.Mean;
-        meter.CreateObservableCounter($"{options.MetricPrefix}sockets.bytes.sent.total", () => lastSent, "B", "The total number of bytes sent over the network");
+        meter.CreateObservableCounter($"{options.MetricPrefix}sockets.bytes.sent.total", () => lastSent < 0
+            ? Array.Empty<Measurement<double>>()
+            : new[] { new Measurement<double>(lastSent) }, "B", "The total number of bytes sent over the network");
     }
 #endif
     private static void ThreadingInstrumentation(Meter meter, RuntimeMetricsOptions options,
@@ -539,7 +553,7 @@ public class RuntimeInstrumentation : IDisposable
                 $"{options.MetricPrefix}threadpool.adjustments.total",
                 description: "The total number of changes made to the size of the thread pool, labeled by the reason for change");
 #if NETFRAMEWORK
-            var threadCount = 0;
+            var threadCount = -1;
 
             nativeEvent.ThreadPoolAdjusted += e =>
             {
@@ -548,7 +562,9 @@ public class RuntimeInstrumentation : IDisposable
                 adjustmentsTotal.Add(1, CreateTag(LabelAdjustmentReason, AdjustmentReasonToLabel[e.AdjustmentReason]));
             };
 
-            meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.thread.count", () => threadCount, description: "ThreadPool thread count");
+            meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.thread.count",
+                () => threadCount < 0 ? Array.Empty<Measurement<int>>() : new[] { new Measurement<int>(threadCount) },
+                description: "ThreadPool thread count");
 #else
             nativeEvent.ThreadPoolAdjusted += e =>
                 adjustmentsTotal.Add(1, CreateTag(LabelAdjustmentReason, AdjustmentReasonToLabel[e.AdjustmentReason]));
@@ -558,11 +574,11 @@ public class RuntimeInstrumentation : IDisposable
             {
                 // IO threadpool only exists on windows
 
-                var iocThreads = 0;
+                var iocThreads = -1;
                 nativeEvent.IoThreadPoolAdjusted += e => iocThreads = (int)e.NumThreads;
 
                 meter.CreateObservableGauge($"{options.MetricPrefix}threadpool.io.thread.count",
-                    () => iocThreads,
+                    () => iocThreads < 0 ? Array.Empty<Measurement<int>>() : new[] { new Measurement<int>(iocThreads) },
                     description: "The number of active threads in the IO thread pool");
             }
         }

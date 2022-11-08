@@ -37,7 +37,7 @@ app.Use((context, next) =>
     return Task.CompletedTask;
 });
 
-app.UseEndpoints(endpoints => endpoints.MapControllers());
+app.MapControllers();
 
 Prometheus.DotNetRuntime.DotNetRuntimeStatsBuilder.Default().StartCollecting();
 
@@ -46,10 +46,8 @@ Task.Run(() =>
     var obj = new object();
 
     while (true)
-    {
         lock (obj)
             _ = DateTime.Now;
-    }
 });
 
 app.Run();

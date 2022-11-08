@@ -1,9 +1,9 @@
-﻿using System.Net;
-using NUnit.Framework;
+﻿using NUnit.Framework;
+using System.Net;
 
 namespace System.Diagnostics.Runtime.Tests.IntegrationTests;
 
-#if NET6_0_OR_GREATER
+#if NET
 public class Enabled_For_DnsTests : IntegrationTestBase
 {
     protected override RuntimeMetricsOptions GetOptions() => new() { DnsEnabled = true };

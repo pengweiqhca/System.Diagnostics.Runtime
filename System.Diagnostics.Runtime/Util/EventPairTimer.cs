@@ -47,7 +47,7 @@ public class EventPairTimer<TId, TEventData>
 
         if (e.EventId == _startEventId)
         {
-#if NETCOREAPP
+#if NET
             _eventStartedAtCache.Set(_extractEventIdFn(e), startEventData = _extractData(e), e.TimeStamp);
 #else
             _eventStartedAtCache.Set(_extractEventIdFn(e), startEventData = _extractData(e), DateTime.Now);
@@ -59,7 +59,7 @@ public class EventPairTimer<TId, TEventData>
 
         if (!_eventStartedAtCache.TryRemove(_extractEventIdFn(e), out startEventData, out var timeStamp))
             return DurationResult.FinalWithoutDuration;
-#if NETCOREAPP
+#if NET
         duration = e.TimeStamp - timeStamp;
 #else
         duration = DateTime.Now - timeStamp;

@@ -34,20 +34,20 @@ public static class NativeEvent
             LohSizeBytes = (long)(ulong)e.Payload![6]!;
             FinalizationQueueLength = (long)(ulong)e.Payload![9]!;
             NumPinnedObjects = (int)(uint)e.Payload![10]!;
-#if NET6_0_OR_GREATER
+#if NET
             PohSizeBytes = (long)(ulong)e.Payload![14]!;
 #endif
         }
 #if NETFRAMEWORK
-            public HeapStatsEvent(Microsoft.Diagnostics.Tracing.Parsers.Clr.GCHeapStatsTraceData data)
-            {
-                Gen0SizeBytes = data.GenerationSize0;
-                Gen1SizeBytes = data.GenerationSize1;
-                Gen2SizeBytes = data.GenerationSize2;
-                LohSizeBytes = data.GenerationSize3;
-                FinalizationQueueLength = data.FinalizationPromotedCount;
-                NumPinnedObjects = data.PinnedObjectCount;
-            }
+        public HeapStatsEvent(Microsoft.Diagnostics.Tracing.Parsers.Clr.GCHeapStatsTraceData data)
+        {
+            Gen0SizeBytes = data.GenerationSize0;
+            Gen1SizeBytes = data.GenerationSize1;
+            Gen2SizeBytes = data.GenerationSize2;
+            LohSizeBytes = data.GenerationSize3;
+            FinalizationQueueLength = data.FinalizationPromotedCount;
+            NumPinnedObjects = data.PinnedObjectCount;
+        }
 #endif
         public long Gen0SizeBytes { get; }
 
@@ -60,7 +60,7 @@ public static class NativeEvent
         public long FinalizationQueueLength { get; }
 
         public int NumPinnedObjects { get; }
-#if NET6_0_OR_GREATER
+#if NET
         public long PohSizeBytes { get; }
 #endif
     }

@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.Runtime.EventListening.Parsers;
 using NUnit.Framework;
 
-#if NETCOREAPP
+#if NET
 namespace System.Diagnostics.Runtime.Tests.EventListening.Parsers;
 
 [TestFixture]

@@ -1,15 +1,11 @@
-﻿#if NETCOREAPP
+﻿#if NET
 using System.Diagnostics.Runtime.EventListening.Sources;
 
 namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
 //https://github.com/dotnet/runtime/blob/main/src/libraries/System.Private.CoreLib/src/System/Diagnostics/Tracing/RuntimeEventSource.cs#L78
 public class SystemRuntimeEventParser : EventCounterParserBase<SystemRuntimeEventParser>,
-#if NET6_0_OR_GREATER
     SystemRuntimeEventParser.Events.CountersV5_0
-#else
-    SystemRuntimeEventParser.Events.CountersV3_0
-#endif
 {
 #pragma warning disable CS0067
     [CounterName("cpu-usage")] public event Action<MeanCounterValue>? CpuUsage;
@@ -91,7 +87,7 @@ public class SystemRuntimeEventParser : EventCounterParserBase<SystemRuntimeEven
             event Action<MeanCounterValue> LohSize;
             event Action<MeanCounterValue> NumAssembliesLoaded;
         }
-#if NET6_0_OR_GREATER
+
         public interface CountersV5_0 : CountersV3_0
         {
             event Action<MeanCounterValue> GcFragmentation;
@@ -100,7 +96,6 @@ public class SystemRuntimeEventParser : EventCounterParserBase<SystemRuntimeEven
             event Action<MeanCounterValue> MethodsJittedCount;
             event Action<IncrementingCounterValue> TimeInJit;
         }
-#endif
     }
 }
 #endif

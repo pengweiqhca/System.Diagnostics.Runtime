@@ -1,5 +1,5 @@
-﻿using System.Diagnostics.Runtime.EventListening.Parsers;
-using NUnit.Framework;
+﻿using NUnit.Framework;
+using System.Diagnostics.Runtime.EventListening.Parsers;
 
 namespace System.Diagnostics.Runtime.Tests.EventListening.Parsers;
 
@@ -7,7 +7,7 @@ namespace System.Diagnostics.Runtime.Tests.EventListening.Parsers;
 public class ThreadPoolSchedulingParserTest : EventListenerIntegrationTestBase<FrameworkEventParser>
 {
     [Test]
-    public void TestEvent()
+    public async Task TestEvent()
     {
         var countdown1 = new CountdownEvent(10);
         var countdown2 = new CountdownEvent(10);
@@ -16,7 +16,9 @@ public class ThreadPoolSchedulingParserTest : EventListenerIntegrationTestBase<F
         Parser.Dequeue += () => countdown2.Signal();
 
         for (var index = 0; index < 10; index++)
-            ThreadPool.QueueUserWorkItem(_ => Thread.Sleep(10));
+            ThreadPool.QueueUserWorkItem(static _ => Thread.Sleep(10));
+
+        await Task.Delay(1000).ConfigureAwait(false);
 
         Assert.That(countdown1.CurrentCount, Is.InRange(0, 5));
         Assert.IsTrue(countdown2.Wait(TimeSpan.FromSeconds(2)));

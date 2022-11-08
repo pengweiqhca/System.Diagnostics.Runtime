@@ -16,7 +16,7 @@ public static class Simulate
         bool simulateBlocking = true,
         Func<HttpClient>? simulateOutgoingNetwork = null)
     {
-        GC.Collect(0, GCCollectionMode.Forced);
+        GC.Collect(2, GCCollectionMode.Forced);
 
         var r = new Random();
         if (simulateAlloc)
@@ -32,12 +32,10 @@ public static class Simulate
         await Task.Yield();
 
         if (simulateContention)
-        {
             lock (LockObj)
             {
                 Thread.Sleep(100);
             }
-        }
 
         if (simulateJit)
         {
@@ -46,7 +44,6 @@ public static class Simulate
         }
 
         if (simulateException)
-        {
             try
             {
                 var divide = 0;
@@ -55,12 +52,8 @@ public static class Simulate
             catch
             {
             }
-        }
 
-        if (simulateBlocking)
-        {
-            Thread.Sleep(100);
-        }
+        if (simulateBlocking) Thread.Sleep(100);
 
         if (simulateOutgoingNetwork != null)
         {

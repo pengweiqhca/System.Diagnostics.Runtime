@@ -1,12 +1,12 @@
-﻿using System.Runtime.InteropServices;
-using NUnit.Framework;
+﻿using NUnit.Framework;
+using System.Runtime.InteropServices;
 
 namespace System.Diagnostics.Runtime.Tests.IntegrationTests;
 
 internal class Enabled_For_ThreadPoolStats : IntegrationTestBase
 {
     protected override RuntimeMetricsOptions GetOptions() => new() { ThreadingEnabled = true };
-
+#if !NET7_0_OR_GREATER
     [Test]
     public Task When_IO_work_is_executed_on_the_thread_pool_then_the_number_of_io_threads_is_measured()
     {
@@ -19,14 +19,14 @@ internal class Enabled_For_ThreadPoolStats : IntegrationTestBase
                 using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
 
                 var httpTasks = Enumerable.Range(1, 10)
-                    .Select(_ => client.GetAsync("https://www.microsoft.com"));
+                    .Select(_ => client.GetAsync("https://www.bing.com"));
 
                 await Task.WhenAll(httpTasks).ConfigureAwait(false);
             }, measurements =>
-                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}threadpool.active.io.thread.count"), Is.GreaterThanOrEqualTo(1).After(2000, 10)),
+                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}threadpool.active.io.thread.count"), Is.GreaterThanOrEqualTo(1).After(5000, 10)),
             $"{Options.MetricPrefix}threadpool.active.io.thread.count");
     }
-
+#endif
     [Test]
     public Task When_blocking_work_is_executed_on_the_thread_pool()
     {
@@ -40,7 +40,7 @@ internal class Enabled_For_ThreadPoolStats : IntegrationTestBase
                 Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}threadpool.active.worker.thread.count"), Is.GreaterThan(Environment.ProcessorCount).After(desiredSecondsToBlock * 1000, 10)),
             $"{Options.MetricPrefix}threadpool.active.worker.thread.count");
     }
-#if NETCOREAPP
+#if NET
     [Test]
     public Task When_work_is_executed_on_the_thread_pool_then_executed_work_is_measured()
     {
@@ -82,7 +82,7 @@ internal class Enabled_For_ThreadPoolStats : IntegrationTestBase
     }
 #endif
 }
-
+#if !NET7_0_OR_GREATER
 internal class Given_Native_Runtime_Are_Enabled_For_ThreadPoolStats : IntegrationTestBase
 {
     protected override RuntimeMetricsOptions GetOptions() => new() { ThreadingEnabled = true, EnabledNativeRuntime = true };
@@ -111,7 +111,7 @@ internal class Given_Native_Runtime_Are_Enabled_For_ThreadPoolStats : Integratio
             Assert.That(() => measurements.Sum($"{Options.MetricPrefix}threadpool.queue.length"), Is.GreaterThanOrEqualTo(numTasksToSchedule).After(desiredSecondsToBlock * 1000, 10)),
             $"{Options.MetricPrefix}threadpool.queue.length");
     }
-#endif
+#elif NET6
     [Test]
     public Task When_work_is_sleep_on_the_thread_pool_then_executed_work_is_measured() =>
         InstrumentTest.Assert(() =>
@@ -125,7 +125,7 @@ internal class Given_Native_Runtime_Are_Enabled_For_ThreadPoolStats : Integratio
 
             Assert.That(() => measurements.Sum($"{Options.MetricPrefix}threadpool.adjustments.total"), Is.GreaterThanOrEqualTo(1));
         }, $"{Options.MetricPrefix}threadpool.adjustments.total");
-
+#endif
     [Test]
     public Task When_IO_work_is_executed_on_the_thread_pool_then_the_number_of_io_threads_is_measured()
     {
@@ -146,3 +146,4 @@ internal class Given_Native_Runtime_Are_Enabled_For_ThreadPoolStats : Integratio
             $"{Options.MetricPrefix}threadpool.io.thread.count");
     }
 }
+#endif

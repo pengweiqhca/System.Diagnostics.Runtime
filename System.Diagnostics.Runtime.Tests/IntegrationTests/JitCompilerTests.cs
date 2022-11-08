@@ -1,7 +1,7 @@
 ﻿using NUnit.Framework;
 
 namespace System.Diagnostics.Runtime.Tests.IntegrationTests;
-#if NET6_0_OR_GREATER
+#if NET
 internal class Enabled_For_JitStatsTest : IntegrationTestBase
 {
     protected override RuntimeMetricsOptions GetOptions() => new() { JitEnabled = true };

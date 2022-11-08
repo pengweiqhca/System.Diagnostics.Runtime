@@ -48,6 +48,10 @@ internal sealed class DotNetEventListener : EventListener
     {
         if (_eventListener is IDisposable disposable) disposable.Dispose();
 
-        base.Dispose();
+        try
+        {
+            base.Dispose();
+        }
+        catch (AggregateException ex) when (ex.InnerException is ArgumentNullException) { }
     }
 }

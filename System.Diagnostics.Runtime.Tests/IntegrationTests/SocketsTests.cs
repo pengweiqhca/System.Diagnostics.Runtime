@@ -1,8 +1,7 @@
 ﻿using NUnit.Framework;
 
 namespace System.Diagnostics.Runtime.Tests.IntegrationTests;
-
-#if NET6_0_OR_GREATER
+#if NET
 // TODO need to test incoming network activity
 public class Enabled_For_SocketsTests : IntegrationTestBase
 {

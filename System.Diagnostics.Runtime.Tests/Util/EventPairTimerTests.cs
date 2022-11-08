@@ -30,7 +30,7 @@ public class Given_An_EventPairTimer_That_Samples_Every_Event : EventPairTimerBa
         Assert.That(_eventPairTimer.TryGetDuration(nonMonitoredEvent, out var duration), Is.EqualTo(DurationResult.FinalWithoutDuration));
         Assert.That(duration, Is.EqualTo(TimeSpan.Zero));
     }
-#if NETCOREAPP
+#if NET
     [Test]
     public void TryGetEventPairDuration_calculates_duration_between_configured_events()
     {
@@ -56,7 +56,7 @@ public class Given_An_EventPairTimer_That_Samples_Every_Event : EventPairTimerBa
 
         // act
         Assert.That(_eventPairTimer.TryGetDuration(endEvent, out var duration), Is.EqualTo(DurationResult.FinalWithDuration));
-#if NETCOREAPP
+#if NET
         Assert.That(duration, Is.EqualTo(TimeSpan.Zero));
 #endif
     }
@@ -81,7 +81,7 @@ public class Given_An_EventPairTimer_That_Samples_Every_Event : EventPairTimerBa
         Assert.That(_eventPairTimer.TryGetDuration(endEvent3, out var event3Duration), Is.EqualTo(DurationResult.FinalWithDuration));
         Assert.That(_eventPairTimer.TryGetDuration(endEvent2, out var event2Duration), Is.EqualTo(DurationResult.FinalWithDuration));
         Assert.That(_eventPairTimer.TryGetDuration(endEvent1, out var event1Duration), Is.EqualTo(DurationResult.FinalWithDuration));
-#if NETCOREAPP
+#if NET
         Assert.That(event1Duration.TotalMilliseconds, Is.EqualTo(300));
         Assert.That(event2Duration.TotalMilliseconds, Is.EqualTo(200));
         Assert.That(event3Duration.TotalMilliseconds, Is.EqualTo(100));

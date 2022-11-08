@@ -9,10 +9,8 @@ _ = Task.Run(() =>
     var obj = new object();
 
     while (true)
-    {
         lock (obj)
             _ = DateTime.Now;
-    }
 });
 
 await new HostBuilder().ConfigureServices(services => services

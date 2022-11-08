@@ -64,7 +64,7 @@ internal class Given_Contention_Events_Are_Enabled_For_Contention_Stats : Integr
             $"{Options.MetricPrefix}lock.contention.time.total");
     }
 }
-#if NETCOREAPP
+#if NET
 [TestFixture]
 internal class Given_System_Runtime_Are_Enabled_For_Contention_Stats : IntegrationTestBase
 {

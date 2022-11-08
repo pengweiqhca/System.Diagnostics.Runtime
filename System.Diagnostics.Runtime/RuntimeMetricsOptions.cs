@@ -19,7 +19,7 @@ public class RuntimeMetricsOptions
     /// Gets or sets a value indicating whether contention metrics should be collected.
     /// </summary>
     public bool? ContentionEnabled { get; set; }
-#if NET6_0_OR_GREATER
+#if NET
     /// <summary>
     /// Gets or sets a value indicating whether dns metrics should be collected.
     /// </summary>
@@ -34,20 +34,17 @@ public class RuntimeMetricsOptions
     /// Gets or sets a value indicating whether garbage collection metrics should be collected.
     /// </summary>
     public bool? GcEnabled { get; set; }
-
-#if NET6_0_OR_GREATER
+#if NET
     /// <summary>
     /// Gets or sets a value indicating whether jitter metrics should be collected.
     /// </summary>
     public bool? JitEnabled { get; set; }
 #endif
-
     /// <summary>
     /// Gets or sets a value indicating whether process metrics should be collected.
     /// </summary>
     public bool? ProcessEnabled { get; set; }
-
-#if NET6_0_OR_GREATER
+#if NET
     /// <summary>
     /// Gets or sets a value indicating whether sockets metrics should be collected.
     /// </summary>
@@ -60,16 +57,16 @@ public class RuntimeMetricsOptions
 
     private bool IsAllEnabled => AssembliesEnabled == null
         && ContentionEnabled == null
-#if NET6_0_OR_GREATER
+#if NET
         && DnsEnabled == null
 #endif
         && ExceptionsEnabled == null
         && GcEnabled == null
-#if NET6_0_OR_GREATER
+#if NET
         && JitEnabled == null
 #endif
         && ProcessEnabled == null
-#if NET6_0_OR_GREATER
+#if NET
         && SocketsEnabled == null
 #endif
         && ThreadingEnabled == null;
@@ -83,8 +80,7 @@ public class RuntimeMetricsOptions
     /// Gets a value indicating whether contention metrics is enabled.
     /// </summary>
     internal bool IsContentionEnabled => ContentionEnabled == true || IsAllEnabled;
-
-#if NET6_0_OR_GREATER
+#if NET
     /// <summary>
     /// Gets a value indicating whether dns metrics is enabled.
     /// </summary>
@@ -99,27 +95,22 @@ public class RuntimeMetricsOptions
     /// Gets a value indicating whether garbage collection metrics is enabled.
     /// </summary>
     internal bool IsGcEnabled => GcEnabled == true || IsAllEnabled;
-
-#if NET6_0_OR_GREATER
+#if NET
     /// <summary>
     /// Gets a value indicating whether jitter metrics is enabled.
     /// </summary>
     internal bool IsJitEnabled => JitEnabled == true || IsAllEnabled;
 #endif
-
     /// <summary>
     /// Gets a value indicating whether process metrics is enabled.
     /// </summary>
     internal bool IsProcessEnabled => ProcessEnabled == true || IsAllEnabled;
-
-#if NET6_0_OR_GREATER
+#if NET
     /// <summary>
     /// Gets a value indicating whether sockets metrics is enabled.
     /// </summary>
-    internal bool IsSocketsEnabled =>
-        SocketsEnabled == true || IsAllEnabled;
+    internal bool IsSocketsEnabled => SocketsEnabled == true || IsAllEnabled;
 #endif
-
     /// <summary>
     /// Gets a value indicating whether threading metrics is enabled.
     /// </summary>
@@ -130,7 +121,7 @@ public class RuntimeMetricsOptions
     /// </summary>
     /// <remarks>If true, metrics will include more detail info.</remarks>
     public bool EnabledNativeRuntime { get; set; }
-#if NETCOREAPP
+#if NET
     /// <summary>
     /// Gets or sets a value indicating whether enable listen system runtime event source.
     /// </summary>

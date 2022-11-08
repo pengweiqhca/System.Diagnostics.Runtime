@@ -88,9 +88,7 @@ public abstract class EventCounterParserBase<T> : IEventCounterParser<T>
                 if (success)
                     handler.Method.Invoke(handler.Target, new[] { value });
                 else
-                {
                     throw new MismatchedCounterTypeException($"Counter '{counterName}' could not be parsed by function {parseCounterFunc.Method} indicating the counter has been declared as the wrong type.");
-                }
             }
         };
     }
@@ -104,8 +102,6 @@ public abstract class EventCounterParserBase<T> : IEventCounterParser<T>
         payload.TryGetValue("Mean", out var mean) && payload.TryGetValue("Count", out var count)
             ? (true, new((int)count, (double)mean))
             : (false, new MeanCounterValue());
-
-    public void Dispose() { }
 }
 
 public class MismatchedCounterTypeException : Exception

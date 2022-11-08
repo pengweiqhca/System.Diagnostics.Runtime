@@ -18,7 +18,6 @@ internal class Given_Exception_Events_Are_Enabled_For_Exception_Stats : Integrat
                 var divider = 0;
 
                 for (var i = 0; i < numToThrow; i++)
-                {
                     try
                     {
                         _ = 1 / divider;
@@ -26,7 +25,6 @@ internal class Given_Exception_Events_Are_Enabled_For_Exception_Stats : Integrat
                     catch (DivideByZeroException)
                     {
                     }
-                }
             }, measurements =>
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}exception.total", "type", "System.DivideByZeroException"),
                     Is.GreaterThanOrEqualTo(numToThrow).After(5000, 10)),
@@ -34,7 +32,7 @@ internal class Given_Exception_Events_Are_Enabled_For_Exception_Stats : Integrat
     }
 }
 
-#if NETCOREAPP
+#if NET
 [TestFixture]
 internal class Given_Only_Runtime_Counters_Are_Enabled_For_Exception_Stats : IntegrationTestBase
 {
@@ -51,7 +49,6 @@ internal class Given_Only_Runtime_Counters_Are_Enabled_For_Exception_Stats : Int
                 var divider = 0;
 
                 for (var i = 0; i < numToThrow; i++)
-                {
                     try
                     {
                         _ = 1 / divider;
@@ -59,7 +56,6 @@ internal class Given_Only_Runtime_Counters_Are_Enabled_For_Exception_Stats : Int
                     catch (DivideByZeroException)
                     {
                     }
-                }
             }, measurements =>
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}exception.total"),
                     Is.GreaterThanOrEqualTo(numToThrow).After(1000, 10)),
@@ -83,7 +79,6 @@ internal class Enabled_For_Exception_Stats : IntegrationTestBase
                 var divider = 0;
 
                 for (var i = 0; i < numToThrow; i++)
-                {
                     try
                     {
                         _ = 1 / divider;
@@ -91,7 +86,6 @@ internal class Enabled_For_Exception_Stats : IntegrationTestBase
                     catch (DivideByZeroException)
                     {
                     }
-                }
             }, measurements =>
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}exception.total"),
                     Is.GreaterThanOrEqualTo(numToThrow).After(1000, 10)),

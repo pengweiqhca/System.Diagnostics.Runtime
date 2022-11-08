@@ -1,4 +1,4 @@
-﻿#if NET6_0_OR_GREATER
+﻿#if NET
 using System.Diagnostics.Runtime.EventListening.Sources;
 
 namespace System.Diagnostics.Runtime.EventListening.Parsers;

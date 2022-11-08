@@ -9,14 +9,10 @@ public static class StringExtensions
         var sb = new StringBuilder();
         var lastCharWasUpper = false;
 
-        for(var i = 0 ; i < str.Length ; i++)
-        {
+        for (var i = 0; i < str.Length; i++)
             if (char.IsUpper(str[i]))
             {
-                if (!lastCharWasUpper && i != 0)
-                {
-                    sb.Append("_");
-                }
+                if (!lastCharWasUpper && i != 0) sb.Append("_");
 
                 sb.Append(char.ToLower(str[i]));
                 lastCharWasUpper = true;
@@ -26,7 +22,6 @@ public static class StringExtensions
                 sb.Append(str[i]);
                 lastCharWasUpper = false;
             }
-        }
 
         return sb.ToString();
     }

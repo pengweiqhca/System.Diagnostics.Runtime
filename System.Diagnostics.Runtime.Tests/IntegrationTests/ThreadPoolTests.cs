@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 
 namespace System.Diagnostics.Runtime.Tests.IntegrationTests;

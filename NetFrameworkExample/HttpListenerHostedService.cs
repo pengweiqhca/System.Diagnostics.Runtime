@@ -1,10 +1,11 @@
 ﻿using Microsoft.Extensions.Hosting;
 using System.Diagnostics.Runtime;
 using System.Net;
+using System.Net.Http;
 
 namespace NetFrameworkExample;
 
-public class HttpListenerHostedService : BackgroundService, IDisposable
+public class HttpListenerHostedService : BackgroundService
 {
     private readonly HttpListener _httpListener = new() { Prefixes = { "http://localhost:9465/" } };
 

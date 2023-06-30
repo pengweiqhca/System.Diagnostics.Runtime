@@ -11,8 +11,8 @@
     <Compile Include="../AspNetCoreExample/Simulate.cs" />
 
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="*-*" />
-    <PackageReference Include="OpenTelemetry.Exporter.Prometheus.HttpListener" Version="*-*" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.5.*" />
+    <PackageReference Include="OpenTelemetry.Exporter.Prometheus.HttpListener" Version="1.5.*-*" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="*-*" />
 
     <ProjectReference Include="..\System.Diagnostics.Runtime\System.Diagnostics.Runtime.csproj" />

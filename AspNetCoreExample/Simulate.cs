@@ -1,6 +1,7 @@
 ﻿// ReSharper disable once CheckNamespace
 
 using System.Linq.Expressions;
+using System.Net.Http;
 
 namespace System.Diagnostics.Runtime;
 

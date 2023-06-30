@@ -41,7 +41,7 @@ app.MapControllers();
 
 Prometheus.DotNetRuntime.DotNetRuntimeStatsBuilder.Default().StartCollecting();
 
-Task.Run(() =>
+_ = Task.Run(() =>
 {
     var obj = new object();
 

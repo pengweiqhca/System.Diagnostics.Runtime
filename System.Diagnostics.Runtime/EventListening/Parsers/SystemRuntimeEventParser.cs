@@ -5,7 +5,7 @@ namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
 //https://github.com/dotnet/runtime/blob/main/src/libraries/System.Private.CoreLib/src/System/Diagnostics/Tracing/RuntimeEventSource.cs#L78
 public class SystemRuntimeEventParser : EventCounterParserBase<SystemRuntimeEventParser>,
-    SystemRuntimeEventParser.Events.CountersV5_0
+    SystemRuntimeEventParser.Events.Counters
 {
 #pragma warning disable CS0067
     [CounterName("cpu-usage")] public event Action<MeanCounterValue>? CpuUsage;
@@ -65,7 +65,7 @@ public class SystemRuntimeEventParser : EventCounterParserBase<SystemRuntimeEven
 
     public static class Events
     {
-        public interface CountersV3_0 : ICounterEvents
+        public interface Counters : ICounterEvents
         {
             event Action<MeanCounterValue>? CpuUsage;
             event Action<MeanCounterValue>? WorkingSet;
@@ -86,10 +86,7 @@ public class SystemRuntimeEventParser : EventCounterParserBase<SystemRuntimeEven
             event Action<MeanCounterValue> Gen2Size;
             event Action<MeanCounterValue> LohSize;
             event Action<MeanCounterValue> NumAssembliesLoaded;
-        }
 
-        public interface CountersV5_0 : CountersV3_0
-        {
             event Action<MeanCounterValue> GcFragmentation;
             event Action<MeanCounterValue> PohSize;
             event Action<MeanCounterValue> IlBytesJitted;

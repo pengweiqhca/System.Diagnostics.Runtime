@@ -170,7 +170,7 @@ public class RuntimeInstrumentation : IDisposable
     }
 #if NET
     private static void DnsInstrumentation(Meter meter, RuntimeMetricsOptions options,
-        NameResolutionEventParser.Events.CountersV5_0? nameResolutionCounters)
+        NameResolutionEventParser.Events.Counters? nameResolutionCounters)
     {
         if (nameResolutionCounters == null) return;
 
@@ -225,7 +225,7 @@ public class RuntimeInstrumentation : IDisposable
 
     private static void GcInstrumentation(Meter meter, RuntimeMetricsOptions options,
 #if NET
-        SystemRuntimeEventParser.Events.CountersV5_0? runtimeCounters,
+        SystemRuntimeEventParser.Events.Counters? runtimeCounters,
         NativeEvent.INativeEvent? nativeEvent)
 #else
         NativeEvent.IExtendNativeEvent? nativeEvent)
@@ -409,7 +409,7 @@ public class RuntimeInstrumentation : IDisposable
     }
 
     private static void TimeInGc(Meter meter, RuntimeMetricsOptions options,
-        SystemRuntimeEventParser.Events.CountersV3_0? runtimeCounters)
+        SystemRuntimeEventParser.Events.Counters? runtimeCounters)
     {
         Func<int>? timeInGc;
         if (runtimeCounters != null)
@@ -471,7 +471,7 @@ public class RuntimeInstrumentation : IDisposable
     }
 #if NET
     private static void SocketsInstrumentation(Meter meter, RuntimeMetricsOptions options,
-        SocketsEventParser.Events.CountersV5_0? socketCounters)
+        SocketsEventParser.Events.Counters? socketCounters)
     {
         if (socketCounters == null) return;
 

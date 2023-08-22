@@ -6,7 +6,7 @@ namespace System.Diagnostics.Runtime.EventListening.Parsers;
 /// <summary>
 /// https://devblogs.microsoft.com/dotnet/net-5-new-networking-improvements/
 /// </summary>
-public class NameResolutionEventParser : EventCounterParserBase<NameResolutionEventParser>, NameResolutionEventParser.Events.CountersV5_0
+public class NameResolutionEventParser : EventCounterParserBase<NameResolutionEventParser>, NameResolutionEventParser.Events.Counters
 {
 #pragma warning disable CS0067
     [CounterName("dns-lookups-requested")] public event Action<MeanCounterValue>? DnsLookupsRequested;
@@ -20,7 +20,7 @@ public class NameResolutionEventParser : EventCounterParserBase<NameResolutionEv
 
     public static class Events
     {
-        public interface CountersV5_0 : ICounterEvents
+        public interface Counters : ICounterEvents
         {
             event Action<MeanCounterValue> DnsLookupsRequested;
             event Action<MeanCounterValue> CurrentDnsLookups;

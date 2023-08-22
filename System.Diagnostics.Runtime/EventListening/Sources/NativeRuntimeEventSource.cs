@@ -219,7 +219,8 @@ public class NativeRuntimeEventSource
         ChangePoint,
         Stabilizing,
         Starvation,
-        ThreadTimedOut
+        ThreadTimedOut,
+        CooperativeBlocking,
     }
 
     // https://docs.microsoft.com/en-us/dotnet/framework/performance/garbage-collection-etw-events

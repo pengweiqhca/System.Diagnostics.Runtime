@@ -6,7 +6,7 @@ namespace System.Diagnostics.Runtime.EventListening.Parsers;
 /// <summary>
 /// https://devblogs.microsoft.com/dotnet/net-5-new-networking-improvements/
 /// </summary>
-public class SocketsEventParser : EventCounterParserBase<SocketsEventParser>, SocketsEventParser.Events.CountersV5_0
+public class SocketsEventParser : EventCounterParserBase<SocketsEventParser>, SocketsEventParser.Events.Counters
 {
 #pragma warning disable CS0067
     [CounterName("outgoing-connections-established")]
@@ -32,7 +32,7 @@ public class SocketsEventParser : EventCounterParserBase<SocketsEventParser>, So
 
     public static class Events
     {
-        public interface CountersV5_0 : ICounterEvents
+        public interface Counters : ICounterEvents
         {
             event Action<MeanCounterValue> OutgoingConnectionsEstablished;
             event Action<MeanCounterValue> IncomingConnectionsEstablished;

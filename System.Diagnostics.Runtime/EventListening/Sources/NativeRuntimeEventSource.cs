@@ -223,7 +223,8 @@ public class NativeRuntimeEventSource
         CooperativeBlocking,
     }
 
-    // https://docs.microsoft.com/en-us/dotnet/framework/performance/garbage-collection-etw-events
+    // https://learn.microsoft.com/en-us/dotnet/framework/performance/garbage-collection-etw-events
+    // https://learn.microsoft.com/en-us/dotnet/framework/performance/thread-pool-etw-events
     public static class EventId
     {
         public const int GcStart = 1;
@@ -232,11 +233,18 @@ public class NativeRuntimeEventSource
         public const int HeapStats = 4;
         public const int SuspendEEStart = 9;
         public const int AllocTick = 10;
+#if !NET7_0_OR_GREATER
         public const int IoThreadCreate = 44;
         public const int IoThreadTerminate = 45;
         public const int IoThreadRetire = 46;
         public const int IoThreadUnretire = 47;
+#endif
+        public const int WorkerThreadStart = 50;
+        public const int WorkerThreadStop = 51;
+        public const int WorkerThreadRetirementStart = 52;
+        public const int WorkerThreadRetirementStop = 53;
         public const int ThreadPoolAdjustment = 55;
+        public const int WorkerThreadWait = 57;
         public const int ContentionStart = 81;
         public const int ContentionStop = 91;
         public const int PerHeapHistory = 204;

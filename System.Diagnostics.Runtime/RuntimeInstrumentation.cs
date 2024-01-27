@@ -155,17 +155,30 @@ public class RuntimeInstrumentation : IDisposable
 #endif
         if (contentionInfo == null) return;
 
-        var contentionSecondsTotal = meter.CreateCounter<double>($"{options.MetricPrefix}lock.contention.time.total", "s", "The total amount of time spent contending locks");
+        var totalSeconds = 0d;
+        var contentionSecondsTotal = meter.CreateObservableCounter($"{options.MetricPrefix}lock.contention.time.total",
+            () => totalSeconds <= 0
+                ? Array.Empty<Measurement<double>>()
+                : new[] { new Measurement<double>(totalSeconds) }, "s", "The total amount of time spent contending locks");
 #if NETFRAMEWORK
-        var contentionTotal = meter.CreateCounter<long>($"{options.MetricPrefix}lock.contention.total", description: "Monitor Lock Contention Count");
+        var contentionTotal = 0L;
+
+        meter.CreateObservableCounter($"{options.MetricPrefix}lock.contention.total", () => contentionTotal <= 0
+                ? Array.Empty<Measurement<long>>()
+                : new[] { new Measurement<long>(contentionTotal) },
+            description: "Monitor Lock Contention Count");
+
         contentionInfo.ContentionEnd += e =>
         {
-            contentionSecondsTotal.Add(e.ContentionDuration.TotalSeconds);
+            lock (contentionSecondsTotal) totalSeconds += e.ContentionDuration.TotalSeconds;
 
-            contentionTotal.Add(1);
+            Interlocked.Increment(ref contentionTotal);
         };
 #else
-        contentionInfo.ContentionEnd += e => contentionSecondsTotal.Add(e.ContentionDuration.TotalSeconds);
+        contentionInfo.ContentionEnd += e =>
+        {
+            lock (contentionSecondsTotal) totalSeconds += e.ContentionDuration.TotalSeconds;
+        };
 #endif
     }
 #if NET
@@ -301,9 +314,22 @@ public class RuntimeInstrumentation : IDisposable
                     GetFragmentation(fragmentedBytes, stats.Gen0SizeBytes + stats.Gen1SizeBytes + stats.Gen2SizeBytes + stats.LohSizeBytes),
                 "%", "GC fragmentation");
 #endif
-            var allocated = meter.CreateCounter<long>($"{options.MetricPrefix}gc.allocated.total", "B", "Allocation bytes since process start");
+            var loh = 0L;
+            var soh = 0L;
 
-            nativeEvent.AllocationTick += e => allocated.Add(e.AllocatedBytes, CreateTag(LabelHeap, e.IsLargeObjectHeap ? "loh" : "soh"));
+            meter.CreateObservableCounter<long>($"{options.MetricPrefix}gc.allocated.total", () =>
+            {
+                var list=  new List<Measurement<long>>();
+
+                if (loh > 0) list.Add(new(loh, CreateTag(LabelHeap, "loh")));
+
+                if (soh > 0) list.Add(new(soh, CreateTag(LabelHeap, "soh")));
+
+                return list;
+            }, "B", "Allocation bytes since process start");
+
+            nativeEvent.AllocationTick += e => Interlocked.Add(ref e.IsLargeObjectHeap ? ref loh : ref soh,
+                e.AllocatedBytes);
         }
         else
         {
@@ -375,7 +401,7 @@ public class RuntimeInstrumentation : IDisposable
         }
     }
 
-    private static string GetGenerationToString(uint generation) => generation switch
+    private static string GetGenerationToString(long generation) => generation switch
     {
         0 => "0",
         1 => "1",
@@ -511,11 +537,17 @@ public class RuntimeInstrumentation : IDisposable
         NativeEvent.INativeEvent? nativeEvent)
     {
 #if NET
-        meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.thread.count", () => ThreadPool.ThreadCount, description: "ThreadPool thread count");
-        meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.queue.length", () => ThreadPool.PendingWorkItemCount, description: "ThreadPool queue length");
+        meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.thread.count",
+            () => ThreadPool.ThreadCount, description: "ThreadPool thread count");
 
-        meter.CreateObservableCounter($"{options.MetricPrefix}threadpool.completed.items.total", () => ThreadPool.CompletedWorkItemCount, description: "ThreadPool completed work item count");
-        meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.timer.count", () => Timer.ActiveCount, description: "Number of active timers");
+        meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.queue.length",
+            () => ThreadPool.PendingWorkItemCount, description: "ThreadPool queue length");
+
+        meter.CreateObservableCounter($"{options.MetricPrefix}threadpool.completed.items.total",
+            () => ThreadPool.CompletedWorkItemCount, description: "ThreadPool completed work item count");
+
+        meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.timer.count", () => Timer.ActiveCount,
+            description: "Number of active timers");
 #else
         if (frameworkVerbose != null)
         {
@@ -529,16 +561,18 @@ public class RuntimeInstrumentation : IDisposable
                 if (Interlocked.Read(ref total) > 0) Interlocked.Decrement(ref total);
             };
 
-            meter.CreateObservableCounter($"{options.MetricPrefix}threadpool.completed.items.total", () => completedItems, description: "ThreadPool completed work item count");
-            meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.queue.length", () => Math.Max(0, total), description: "ThreadPool queue length");
+            meter.CreateObservableCounter($"{options.MetricPrefix}threadpool.completed.items.total",
+                () => completedItems, description: "ThreadPool completed work item count");
+
+            meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.queue.length",
+                () => Math.Max(0, total), description: "ThreadPool queue length");
         }
 #endif
-#if !NET7_0_OR_GREATER
         if (nativeEvent != null)
         {
-            var adjustmentsTotal = meter.CreateCounter<int>(
-                $"{options.MetricPrefix}threadpool.adjustments.total",
-                description: "The total number of changes made to the size of the thread pool, labeled by the reason for change");
+            var adjustmentsTotal = meter.CreateCounter<int>($"{options.MetricPrefix}threadpool.adjustments.total",
+                description:
+                "The total number of changes made to the size of the thread pool, labeled by the reason for change");
 #if NETFRAMEWORK
             var threadCount = -1;
 
@@ -556,42 +590,66 @@ public class RuntimeInstrumentation : IDisposable
             nativeEvent.ThreadPoolAdjusted += e =>
                 adjustmentsTotal.Add(1, CreateTag(LabelAdjustmentReason, AdjustmentReasonToLabel[e.AdjustmentReason]));
 #endif
+            nativeEvent.WorkerThreadPoolAdjusted += RegisterThreadPool(meter, options, "worker");
+
+#if !NET7_0_OR_GREATER
+
+            // IO threadpool only exists on windows
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                nativeEvent.IoThreadPoolAdjusted += RegisterThreadPool(meter, options, "io");
+#endif
+        }
+        else
+        {
+#if !NET7_0_OR_GREATER
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 // IO threadpool only exists on windows
 
-                var iocThreads = -1;
-                nativeEvent.IoThreadPoolAdjusted += e => iocThreads = (int)e.NumThreads;
+                static int IoThreadCount()
+                {
+                    ThreadPool.GetAvailableThreads(out _, out var t2);
+                    ThreadPool.GetMaxThreads(out _, out var t4);
 
-                meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.io.thread.count",
-                    () => iocThreads < 0 ? Array.Empty<Measurement<int>>() : new[] { new Measurement<int>(iocThreads) },
-                    description: "The number of active threads in the IO thread pool");
+                    return t4 - t2;
+                }
+
+                meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.io.thread.count", IoThreadCount,
+                    description: "The number of io threads");
             }
-        }
 #endif
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            static int IoThreadCount()
+            static int ThreadCount()
             {
-                ThreadPool.GetAvailableThreads(out _, out var t2);
-                ThreadPool.GetMaxThreads(out _, out var t4);
+                ThreadPool.GetAvailableThreads(out var t1, out _);
+                ThreadPool.GetMaxThreads(out var t3, out _);
 
-                return t4 - t2;
+                return t3 - t1;
             }
 
-            meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.active.io.thread.count", IoThreadCount,
-                description: "The number of active IO threads");
+            meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.worker.thread.count", ThreadCount,
+                description: "The number of worker threads");
         }
+    }
 
-        static int ThreadCount()
-        {
-            ThreadPool.GetAvailableThreads(out var t1, out var t2);
-            ThreadPool.GetMaxThreads(out var t3, out var t4);
+    private static Action<NativeEvent.ThreadPoolAdjustedEvent> RegisterThreadPool(Meter meter, RuntimeMetricsOptions options,
+        string threadType)
+    {
+        var activeThreads = -1L;
+        var retiredThreads = -1L;
 
-            return t3 - t1 + t4 - t2;
-        }
+        meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.active.{threadType}.thread.count",
+            () => activeThreads < 0
+                ? Array.Empty<Measurement<long>>()
+                : new[] { new Measurement<long>(activeThreads) },
+            description: $"The number of active {threadType} threads");
 
-        meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.active.worker.thread.count", ThreadCount, description: "The number of active worker threads");
+        meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.{threadType}.thread.count",
+            () => retiredThreads < 0
+                ? Array.Empty<Measurement<long>>()
+                : new[] { new Measurement<long>(Math.Max(0, activeThreads) + retiredThreads) },
+            description: $"The number of {threadType} threads");
+
+        return e => (activeThreads, retiredThreads) = e;
     }
 
     public void Dispose()

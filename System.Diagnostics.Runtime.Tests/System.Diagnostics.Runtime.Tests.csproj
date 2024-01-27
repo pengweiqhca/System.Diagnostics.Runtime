@@ -4,18 +4,15 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyOriginatorKeyFile>..\Key.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>True</SignAssembly>
-    <TargetFrameworks>net7.0;net6.0;net471</TargetFrameworks>
+    <TargetFrameworks>net8.0;net7.0;net6.0;net471</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="fasterflect" Version="3.*" />
-    <PackageReference Include="IsExternalInit" Version="1.*" PrivateAssets="All" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
     <PackageReference Include="nunit" Version="3.*" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.*" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
-  </ItemGroup>
 
-  <ItemGroup>
     <ProjectReference Include="..\System.Diagnostics.Runtime\System.Diagnostics.Runtime.csproj" />
   </ItemGroup>
 

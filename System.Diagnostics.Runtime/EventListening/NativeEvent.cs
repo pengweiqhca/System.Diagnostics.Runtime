@@ -13,8 +13,11 @@ public static class NativeEvent
         event Action<CollectionStartEvent> CollectionStart;
         event Action<CollectionCompleteEvent> CollectionComplete;
         event Action<AllocationTickEvent> AllocationTick;
-        event Action<ThreadPoolAdjustedEvent> ThreadPoolAdjusted;
-        event Action<IoThreadPoolAdjustedEvent> IoThreadPoolAdjusted;
+        event Action<ThreadPoolAdjustedReasonEvent> ThreadPoolAdjusted;
+#if !NET7_0_OR_GREATER
+        event Action<ThreadPoolAdjustedEvent> IoThreadPoolAdjusted;
+#endif
+        event Action<ThreadPoolAdjustedEvent> WorkerThreadPoolAdjusted;
     }
 
     public interface IExtendNativeEvent : INativeEvent
@@ -67,15 +70,15 @@ public static class NativeEvent
 
     public record struct PauseCompleteEvent(TimeSpan PauseDuration);
 
-    public record struct CollectionStartEvent(uint Count, uint Generation, NativeRuntimeEventSource.GCReason Reason);
+    public record struct CollectionStartEvent(long Count, long Generation, NativeRuntimeEventSource.GCReason Reason);
 
-    public record struct CollectionCompleteEvent(uint Generation, NativeRuntimeEventSource.GCType Type, TimeSpan Duration);
+    public record struct CollectionCompleteEvent(long Generation, NativeRuntimeEventSource.GCType Type, TimeSpan Duration);
 
-    public record struct AllocationTickEvent(uint AllocatedBytes, bool IsLargeObjectHeap);
+    public record struct AllocationTickEvent(long AllocatedBytes, bool IsLargeObjectHeap);
 
     public record struct HeapFragmentationEvent(long FragmentedBytes);
 
-    public record struct ThreadPoolAdjustedEvent(uint NumThreads, NativeRuntimeEventSource.ThreadAdjustmentReason AdjustmentReason);
+    public record struct ThreadPoolAdjustedReasonEvent(long NumThreads, NativeRuntimeEventSource.ThreadAdjustmentReason AdjustmentReason);
 
-    public record struct IoThreadPoolAdjustedEvent(uint NumThreads);
+    public record struct ThreadPoolAdjustedEvent(long ActiveNumThreads, long RetiredNumThreads);
 }

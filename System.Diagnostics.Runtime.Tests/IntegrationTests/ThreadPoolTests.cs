@@ -6,7 +6,8 @@ namespace System.Diagnostics.Runtime.Tests.IntegrationTests;
 
 internal class Enabled_For_ThreadPoolStats : IntegrationTestBase
 {
-    protected override RuntimeMetricsOptions GetOptions() => new() { ThreadingEnabled = true };
+    protected override RuntimeMetricsOptions GetOptions() =>
+        new() { ThreadingEnabled = true, EnabledNativeRuntime = true };
 #if !NET7_0_OR_GREATER
     [Test]
     public Task When_IO_work_is_executed_on_the_thread_pool_then_the_number_of_io_threads_is_measured()

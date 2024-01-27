@@ -34,8 +34,11 @@ public class NativeRuntimeEventParser : IEventParser<NativeRuntimeEventParser>,
     public event Action<NativeEvent.CollectionStartEvent>? CollectionStart;
     public event Action<NativeEvent.CollectionCompleteEvent>? CollectionComplete;
     public event Action<NativeEvent.AllocationTickEvent>? AllocationTick;
-    public event Action<NativeEvent.ThreadPoolAdjustedEvent>? ThreadPoolAdjusted;
-    public event Action<NativeEvent.IoThreadPoolAdjustedEvent>? IoThreadPoolAdjusted;
+    public event Action<NativeEvent.ThreadPoolAdjustedReasonEvent>? ThreadPoolAdjusted;
+#if !NET7_0_OR_GREATER
+    public event Action<NativeEvent.ThreadPoolAdjustedEvent>? IoThreadPoolAdjusted;
+#endif
+    public event Action<NativeEvent.ThreadPoolAdjustedEvent>? WorkerThreadPoolAdjusted;
 
     public string EventSourceName => NativeRuntimeEventSource.Name;
 
@@ -43,9 +46,7 @@ public class NativeRuntimeEventParser : IEventParser<NativeRuntimeEventParser>,
         NativeRuntimeEventSource.Keywords.Contention | // thread contention timing
         NativeRuntimeEventSource.Keywords.Exception | // get the first chance
         NativeRuntimeEventSource.Keywords.GC | // garbage collector details
-#if NET6_0
         NativeRuntimeEventSource.Keywords.Threading | // threadpool events
-#endif
         NativeRuntimeEventSource.Keywords.Type); // for finalizer and exceptions type names
 
     public void ProcessEvent(EventWrittenEventArgs e)
@@ -103,10 +104,18 @@ public class NativeRuntimeEventParser : IEventParser<NativeRuntimeEventParser>,
                 ThreadPoolAdjusted?.Invoke(new((uint)e.Payload![1]!,
                     (NativeRuntimeEventSource.ThreadAdjustmentReason)e.Payload![2]!));
                 return;
+#if !NET7_0_OR_GREATER
             case NativeRuntimeEventSource.EventId.IoThreadCreate or NativeRuntimeEventSource.EventId.IoThreadRetire
                 or NativeRuntimeEventSource.EventId.IoThreadUnretire
                 or NativeRuntimeEventSource.EventId.IoThreadTerminate:
-                IoThreadPoolAdjusted?.Invoke(new((uint)e.Payload![0]!));
+                IoThreadPoolAdjusted?.Invoke(new((uint)e.Payload![0]!, (uint)e.Payload![1]!));
+                return;
+#endif
+            case NativeRuntimeEventSource.EventId.WorkerThreadStart or NativeRuntimeEventSource.EventId.WorkerThreadStop
+                or NativeRuntimeEventSource.EventId.WorkerThreadRetirementStart
+                or NativeRuntimeEventSource.EventId.WorkerThreadRetirementStop
+                or NativeRuntimeEventSource.EventId.WorkerThreadWait:
+                WorkerThreadPoolAdjusted?.Invoke(new((uint)e.Payload![0]!, (uint)e.Payload![1]!));
                 return;
         }
     }

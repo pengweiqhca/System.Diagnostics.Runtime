@@ -71,8 +71,11 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
         _session.Source.Clr.GCAllocationTick += GCAllocationTick;
         _session.Source.Clr.GCPerHeapHistory += GCPerHeapHistory;
         _session.Source.Clr.ThreadPoolWorkerThreadAdjustmentAdjustment += ThreadPoolWorkerThreadAdjustment;
-        _session.Source.Clr.IOThreadCreationStop += IOThreadAdjustment;
-        _session.Source.Clr.IOThreadRetirementStop += IOThreadAdjustment;
+        _session.Source.Clr.IOThreadCreationStart += IOThreadAdjustment;
+        _session.Source.Clr.IOThreadRetirementStart += IOThreadAdjustment;
+        _session.Source.Clr.ThreadPoolWorkerThreadStart += WorkerThreadAdjustment;
+        _session.Source.Clr.ThreadPoolWorkerThreadRetirementStart += WorkerThreadAdjustment;
+        _session.Source.Clr.ThreadPoolWorkerThreadWait += WorkerThreadAdjustment;
 
         try
         {
@@ -101,7 +104,12 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
                         NativeRuntimeEventSource.EventId.IoThreadTerminate,
                         NativeRuntimeEventSource.EventId.IoThreadRetire,
                         NativeRuntimeEventSource.EventId.IoThreadUnretire,
+                        NativeRuntimeEventSource.EventId.WorkerThreadStart,
+                        NativeRuntimeEventSource.EventId.WorkerThreadStop,
+                        NativeRuntimeEventSource.EventId.WorkerThreadRetirementStart,
+                        NativeRuntimeEventSource.EventId.WorkerThreadRetirementStop,
                         NativeRuntimeEventSource.EventId.ThreadPoolAdjustment,
+                        NativeRuntimeEventSource.EventId.WorkerThreadWait,
                         NativeRuntimeEventSource.EventId.ContentionStart,
                         NativeRuntimeEventSource.EventId.ContentionStop,
                         NativeRuntimeEventSource.EventId.PerHeapHistory,
@@ -120,8 +128,11 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
             _session.Source.Clr.GCAllocationTick -= GCAllocationTick;
             _session.Source.Clr.GCPerHeapHistory -= GCPerHeapHistory;
             _session.Source.Clr.ThreadPoolWorkerThreadAdjustmentAdjustment -= ThreadPoolWorkerThreadAdjustment;
-            _session.Source.Clr.IOThreadCreationStop -= IOThreadAdjustment;
-            _session.Source.Clr.IOThreadRetirementStop -= IOThreadAdjustment;
+            _session.Source.Clr.IOThreadCreationStart -= IOThreadAdjustment;
+            _session.Source.Clr.IOThreadRetirementStart -= IOThreadAdjustment;
+            _session.Source.Clr.ThreadPoolWorkerThreadStart -= WorkerThreadAdjustment;
+            _session.Source.Clr.ThreadPoolWorkerThreadRetirementStart -= WorkerThreadAdjustment;
+            _session.Source.Clr.ThreadPoolWorkerThreadWait -= WorkerThreadAdjustment;
 
             throw;
         }
@@ -140,8 +151,11 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
             _session.Source.Clr.GCAllocationTick -= GCAllocationTick;
             _session.Source.Clr.GCPerHeapHistory -= GCPerHeapHistory;
             _session.Source.Clr.ThreadPoolWorkerThreadAdjustmentAdjustment -= ThreadPoolWorkerThreadAdjustment;
-            _session.Source.Clr.IOThreadCreationStop -= IOThreadAdjustment;
-            _session.Source.Clr.IOThreadRetirementStop -= IOThreadAdjustment;
+            _session.Source.Clr.IOThreadCreationStart -= IOThreadAdjustment;
+            _session.Source.Clr.IOThreadRetirementStart -= IOThreadAdjustment;
+            _session.Source.Clr.ThreadPoolWorkerThreadStart -= WorkerThreadAdjustment;
+            _session.Source.Clr.ThreadPoolWorkerThreadRetirementStart -= WorkerThreadAdjustment;
+            _session.Source.Clr.ThreadPoolWorkerThreadWait -= WorkerThreadAdjustment;
         }, TaskCreationOptions.LongRunning);
     }
 
@@ -152,8 +166,10 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
     public event Action<NativeEvent.CollectionCompleteEvent>? CollectionComplete;
     public event Action<NativeEvent.AllocationTickEvent>? AllocationTick;
     public event Action<NativeEvent.HeapFragmentationEvent>? HeapFragmentation;
-    public event Action<NativeEvent.ThreadPoolAdjustedEvent>? ThreadPoolAdjusted;
-    public event Action<NativeEvent.IoThreadPoolAdjustedEvent>? IoThreadPoolAdjusted;
+    public event Action<NativeEvent.ThreadPoolAdjustedReasonEvent>? ThreadPoolAdjusted;
+    public event Action<NativeEvent.ThreadPoolAdjustedEvent>? IoThreadPoolAdjusted;
+
+    public event Action<NativeEvent.ThreadPoolAdjustedEvent>? WorkerThreadPoolAdjusted;
 
     private void ContentionStart(ContentionStartTraceData data)
     {
@@ -251,7 +267,15 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
         if (data.ProcessID != ProcessId) return;
 
         if (IoThreadPoolAdjusted is { } func)
-            func(new((uint)data.IOThreadCount));
+            func(new((uint)data.IOThreadCount, (uint)data.RetiredIOThreads));
+    }
+
+    private void WorkerThreadAdjustment(ThreadPoolWorkerThreadTraceData data)
+    {
+        if (data.ProcessID != ProcessId) return;
+
+        if (WorkerThreadPoolAdjusted is { } func)
+            func(new((uint)data.ActiveWorkerThreadCount, (uint)data.RetiredWorkerThreadCount));
     }
 
     // If not close, your can use this command close session: logman -ets stop <session name>

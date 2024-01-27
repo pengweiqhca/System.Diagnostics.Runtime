@@ -157,15 +157,13 @@ public class RuntimeInstrumentation : IDisposable
 
         var totalSeconds = 0d;
         var contentionSecondsTotal = meter.CreateObservableCounter($"{options.MetricPrefix}lock.contention.time.total",
-            () => totalSeconds <= 0
-                ? Array.Empty<Measurement<double>>()
-                : new[] { new Measurement<double>(totalSeconds) }, "s", "The total amount of time spent contending locks");
+            () => totalSeconds > 0 ? new[] { new Measurement<double>(totalSeconds) } : [], "s",
+            "The total amount of time spent contending locks");
 #if NETFRAMEWORK
         var contentionTotal = 0L;
 
-        meter.CreateObservableCounter($"{options.MetricPrefix}lock.contention.total", () => contentionTotal <= 0
-                ? Array.Empty<Measurement<long>>()
-                : new[] { new Measurement<long>(contentionTotal) },
+        meter.CreateObservableCounter($"{options.MetricPrefix}lock.contention.total",
+            () => contentionTotal > 0 ? new[] { new Measurement<long>(contentionTotal) } : [],
             description: "Monitor Lock Contention Count");
 
         contentionInfo.ContentionEnd += e =>
@@ -190,24 +188,20 @@ public class RuntimeInstrumentation : IDisposable
         var dnsLookupsRequested = -1L;
         nameResolutionCounters.DnsLookupsRequested += e => dnsLookupsRequested = (long)e.Mean;
         meter.CreateObservableCounter($"{options.MetricPrefix}dns.requested.total",
-            () => dnsLookupsRequested < 0
-                ? Array.Empty<Measurement<long>>()
-                : new[] { new Measurement<long>(dnsLookupsRequested) },
+            () => dnsLookupsRequested < 0 ? [] : new[] { new Measurement<long>(dnsLookupsRequested) },
             description: "The total number of dns lookup requests");
 
         var currentDnsLookups = -1L;
         nameResolutionCounters.CurrentDnsLookups += e => currentDnsLookups = (long)e.Mean;
         meter.CreateObservableUpDownCounter($"{options.MetricPrefix}dns.current.count",
-            () => currentDnsLookups < 0 ? Array.Empty<Measurement<long>>() : new[] { new Measurement<long>(currentDnsLookups) },
+            () => currentDnsLookups < 0 ? [] : new[] { new Measurement<long>(currentDnsLookups) },
             description: "The total number of current dns lookups");
 
         var dnsLookupsDuration = -1d;
         nameResolutionCounters.DnsLookupsDuration += e => dnsLookupsDuration = e.Total;
         meter.CreateObservableCounter($"{options.MetricPrefix}dns.duration.total",
-            () => dnsLookupsDuration < 0
-                ? Array.Empty<Measurement<double>>()
-                : new[] { new Measurement<double>(dnsLookupsDuration) },
-            "ms", "The sum of dns lookup durations");
+            () => dnsLookupsDuration < 0 ? [] : new[] { new Measurement<double>(dnsLookupsDuration) }, "ms",
+            "The sum of dns lookup durations");
     }
 #endif
     private static IDisposable ExceptionsInstrumentation(Meter meter, RuntimeMetricsOptions options)
@@ -282,7 +276,7 @@ public class RuntimeInstrumentation : IDisposable
             nativeEvent.HeapStats += e => stats = e;
 
             meter.CreateObservableUpDownCounter($"{options.MetricPrefix}gc.heap.size", () => stats == default
-                ? Array.Empty<Measurement<long>>()
+                ? []
                 : new[]
                 {
                     CreateMeasurement(stats.Gen0SizeBytes, LabelGeneration, "0"),
@@ -295,11 +289,11 @@ public class RuntimeInstrumentation : IDisposable
                 }, "B", "The current size of all heaps (only updated after a garbage collection)");
 
             meter.CreateObservableUpDownCounter($"{options.MetricPrefix}gc.pinned.objects",
-                () => stats == default ? Array.Empty<Measurement<int>>() : new[] { new Measurement<int>(stats.NumPinnedObjects) },
+                () => stats == default ? [] : new[] { new Measurement<int>(stats.NumPinnedObjects) },
                 description: "The number of pinned objects");
 
             meter.CreateObservableUpDownCounter($"{options.MetricPrefix}gc.finalization.queue.length",
-                () => stats == default ? Array.Empty<Measurement<long>>() : new[] { new Measurement<long>(stats.FinalizationQueueLength) },
+                () => stats == default ? [] : new[] { new Measurement<long>(stats.FinalizationQueueLength) },
                 description: "The number of objects waiting to be finalized");
 #if NETFRAMEWORK
             var fragmentedBytes = -1L;
@@ -356,7 +350,7 @@ public class RuntimeInstrumentation : IDisposable
                             CreateMeasurement(heapSize.LohSizeBytes, LabelGeneration, "loh"),
                             CreateMeasurement(heapSize.PohSizeBytes, LabelGeneration, "poh")
                         }
-                        : Array.Empty<Measurement<long>>(),
+                        : [],
                     "B", "The current size of all heaps (only updated after a garbage collection)");
 
                 runtimeCounters.Gen0Size += e => heapSize.Gen0SizeBytes = (long)e.Mean;
@@ -415,7 +409,7 @@ public class RuntimeInstrumentation : IDisposable
 
     private static IEnumerable<Measurement<double>> GetFragmentation(long fragmentedBytes, long heapSizeBytes) =>
         fragmentedBytes < 0 || heapSizeBytes <= 0
-            ? Array.Empty<Measurement<double>>()
+            ? []
             : new[] { new Measurement<double>(fragmentedBytes * 100d / heapSizeBytes) };
 #if NET
     private static IEnumerable<Measurement<double>> GetFragmentation()
@@ -475,10 +469,10 @@ public class RuntimeInstrumentation : IDisposable
         meter.CreateObservableUpDownCounter("process.memory.usage", () => Process.GetCurrentProcess().WorkingSet64, "B", "The amount of physical memory in use");
         meter.CreateObservableUpDownCounter("process.memory.virtual", () => Process.GetCurrentProcess().VirtualMemorySize64, "B", "The amount of committed virtual memory");
 
-        meter.CreateObservableGauge("process.cpu.usage",
+        meter.CreateObservableGauge<double>("process.cpu.usage",
             RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
                 ? CpuUtilization.GetCpuUsage
-                : new Func<double>(ProcessTimes.GetCpuUsage),
+                : new(ProcessTimes.GetCpuUsage),
             "%", "CPU usage");
 
         meter.CreateObservableUpDownCounter("process.handle.count", () => Process.GetCurrentProcess().HandleCount, description: "Process handle count");
@@ -504,30 +498,26 @@ public class RuntimeInstrumentation : IDisposable
         var lastEstablishedOutgoing = -1d;
         socketCounters.OutgoingConnectionsEstablished += e => lastEstablishedOutgoing = e.Mean;
         meter.CreateObservableCounter($"{options.MetricPrefix}sockets.connections.established.outgoing.total",
-            () => lastEstablishedOutgoing < 0
-                ? Array.Empty<Measurement<double>>()
-                : new[] { new Measurement<double>(lastEstablishedOutgoing) },
+            () => lastEstablishedOutgoing < 0 ? [] : new[] { new Measurement<double>(lastEstablishedOutgoing) },
             description: "The total number of outgoing established TCP connections");
 
         var lastEstablishedIncoming = -1d;
         socketCounters.IncomingConnectionsEstablished += e => lastEstablishedIncoming = e.Mean;
         meter.CreateObservableCounter($"{options.MetricPrefix}sockets.connections.established.incoming.total",
-            () => lastEstablishedIncoming < 0
-                ? Array.Empty<Measurement<double>>()
-                : new[] { new Measurement<double>(lastEstablishedIncoming) },
+            () => lastEstablishedIncoming < 0 ? [] : new[] { new Measurement<double>(lastEstablishedIncoming) },
             description: "The total number of incoming established TCP connections");
 
         var lastReceived = -1d;
         socketCounters.BytesReceived += e => lastReceived = e.Mean;
-        meter.CreateObservableCounter($"{options.MetricPrefix}sockets.bytes.received.total", () => lastReceived < 0
-            ? Array.Empty<Measurement<double>>()
-            : new[] { new Measurement<double>(lastReceived) }, "B", "The total number of bytes received over the network");
+        meter.CreateObservableCounter($"{options.MetricPrefix}sockets.bytes.received.total",
+            () => lastReceived < 0 ? [] : new[] { new Measurement<double>(lastReceived) }, "B",
+            "The total number of bytes received over the network");
 
         var lastSent = -1d;
         socketCounters.BytesSent += e => lastSent = e.Mean;
-        meter.CreateObservableCounter($"{options.MetricPrefix}sockets.bytes.sent.total", () => lastSent < 0
-            ? Array.Empty<Measurement<double>>()
-            : new[] { new Measurement<double>(lastSent) }, "B", "The total number of bytes sent over the network");
+        meter.CreateObservableCounter($"{options.MetricPrefix}sockets.bytes.sent.total",
+            () => lastSent < 0 ? [] : new[] { new Measurement<double>(lastSent) }, "B",
+            "The total number of bytes sent over the network");
     }
 #endif
     private static void ThreadingInstrumentation(Meter meter, RuntimeMetricsOptions options,
@@ -584,7 +574,7 @@ public class RuntimeInstrumentation : IDisposable
             };
 
             meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.thread.count",
-                () => threadCount < 0 ? Array.Empty<Measurement<int>>() : new[] { new Measurement<int>(threadCount) },
+                () => threadCount < 0 ? [] : new[] { new Measurement<int>(threadCount) },
                 description: "ThreadPool thread count");
 #else
             nativeEvent.ThreadPoolAdjusted += e =>
@@ -638,14 +628,12 @@ public class RuntimeInstrumentation : IDisposable
         var retiredThreads = -1L;
 
         meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.active.{threadType}.thread.count",
-            () => activeThreads < 0
-                ? Array.Empty<Measurement<long>>()
-                : new[] { new Measurement<long>(activeThreads) },
+            () => activeThreads < 0 ? [] : new[] { new Measurement<long>(activeThreads) },
             description: $"The number of active {threadType} threads");
 
         meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.{threadType}.thread.count",
             () => retiredThreads < 0
-                ? Array.Empty<Measurement<long>>()
+                ? []
                 : new[] { new Measurement<long>(Math.Max(0, activeThreads) + retiredThreads) },
             description: $"The number of {threadType} threads");
 

@@ -6,6 +6,4 @@ namespace System.Diagnostics.Runtime.EventListening;
 /// A <see cref="IEventListener"/> that receives "untyped" events of <see cref="EventWrittenEventArgs"/> into strongly-typed events.
 /// </summary>
 public interface IEventParser<TEvents> : IEventListener
-    where TEvents : IEvents
-{
-}
+    where TEvents : IEvents;

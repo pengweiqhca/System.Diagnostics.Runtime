@@ -5,6 +5,4 @@
 /// </summary>
 /// <typeparam name="TCounters"></typeparam>
 public interface IEventCounterParser<TCounters> : IEventParser<TCounters>, IEventCounterListener
-    where TCounters : ICounterEvents
-{
-}
+    where TCounters : ICounterEvents;

@@ -157,7 +157,7 @@ public class RuntimeInstrumentation : IDisposable
 
         var totalTicks = 0L;
         meter.CreateObservableCounter($"{options.MetricPrefix}lock.contention.time.total",
-            () => totalTicks > 0 ? new[] { new Measurement<double>((double)totalTicks / TimeSpan.TicksPerSecond) } : [],
+            () => totalTicks > 0 ? new[] { new Measurement<double>(totalTicks / (double)TimeSpan.TicksPerSecond) } : [],
             "s", "The total amount of time spent contending locks");
 #if NETFRAMEWORK
         var contentionTotal = 0L;
@@ -308,7 +308,7 @@ public class RuntimeInstrumentation : IDisposable
             var loh = 0L;
             var soh = 0L;
 
-            meter.CreateObservableCounter<long>($"{options.MetricPrefix}gc.allocated.total", () =>
+            meter.CreateObservableCounter($"{options.MetricPrefix}gc.allocated.total", () =>
             {
                 var list=  new List<Measurement<long>>();
 
@@ -555,67 +555,36 @@ public class RuntimeInstrumentation : IDisposable
                 () => Math.Max(0, total), description: "ThreadPool queue length");
         }
 #endif
-        if (nativeEvent != null)
-        {
-            var adjustmentsTotal = meter.CreateCounter<int>($"{options.MetricPrefix}threadpool.adjustments.total",
-                description:
-                "The total number of changes made to the size of the thread pool, labeled by the reason for change");
+        if (nativeEvent == null) return;
+
+        var adjustmentsTotal = meter.CreateCounter<int>($"{options.MetricPrefix}threadpool.adjustments.total",
+            description:
+            "The total number of changes made to the size of the thread pool, labeled by the reason for change");
 #if NETFRAMEWORK
-            var threadCount = -1;
+        var threadCount = -1;
 
-            nativeEvent.ThreadPoolAdjusted += e =>
-            {
-                threadCount = (int)e.NumThreads;
-
-                adjustmentsTotal.Add(1, CreateTag(LabelAdjustmentReason, AdjustmentReasonToLabel[e.AdjustmentReason]));
-            };
-
-            meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.thread.count",
-                () => threadCount < 0 ? [] : new[] { new Measurement<int>(threadCount) },
-                description: "ThreadPool thread count");
-#else
-            nativeEvent.ThreadPoolAdjusted += e =>
-                adjustmentsTotal.Add(1, CreateTag(LabelAdjustmentReason, AdjustmentReasonToLabel[e.AdjustmentReason]));
-#endif
-            nativeEvent.WorkerThreadPoolAdjusted += RegisterThreadPool(meter, options, "worker");
-
-#if !NET7_0_OR_GREATER
-
-            // IO threadpool only exists on windows
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                nativeEvent.IoThreadPoolAdjusted += RegisterThreadPool(meter, options, "io");
-#endif
-        }
-        else
+        nativeEvent.ThreadPoolAdjusted += e =>
         {
-#if !NET7_0_OR_GREATER
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                // IO threadpool only exists on windows
+            threadCount = (int)e.NumThreads;
 
-                static int IoThreadCount()
-                {
-                    ThreadPool.GetAvailableThreads(out _, out var t2);
-                    ThreadPool.GetMaxThreads(out _, out var t4);
+            adjustmentsTotal.Add(1, CreateTag(LabelAdjustmentReason, AdjustmentReasonToLabel[e.AdjustmentReason]));
+        };
 
-                    return t4 - t2;
-                }
-
-                meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.io.thread.count", IoThreadCount,
-                    description: "The number of io threads");
-            }
+        meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.thread.count",
+            () => threadCount < 0 ? [] : new[] { new Measurement<int>(threadCount) },
+            description: "ThreadPool thread count");
+#else
+        nativeEvent.ThreadPoolAdjusted += e =>
+            adjustmentsTotal.Add(1, CreateTag(LabelAdjustmentReason, AdjustmentReasonToLabel[e.AdjustmentReason]));
 #endif
-            static int ThreadCount()
-            {
-                ThreadPool.GetAvailableThreads(out var t1, out _);
-                ThreadPool.GetMaxThreads(out var t3, out _);
+        nativeEvent.WorkerThreadPoolAdjusted += RegisterThreadPool(meter, options, "worker");
 
-                return t3 - t1;
-            }
+#if !NET7_0_OR_GREATER
 
-            meter.CreateObservableUpDownCounter($"{options.MetricPrefix}threadpool.worker.thread.count", ThreadCount,
-                description: "The number of worker threads");
-        }
+        // IO threadpool only exists on windows
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            nativeEvent.IoThreadPoolAdjusted += RegisterThreadPool(meter, options, "io");
+#endif
     }
 
     private static Action<NativeEvent.ThreadPoolAdjustedEvent> RegisterThreadPool(Meter meter, RuntimeMetricsOptions options,

@@ -72,9 +72,9 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
         _session.Source.Clr.GCPerHeapHistory += GCPerHeapHistory;
         _session.Source.Clr.ThreadPoolWorkerThreadAdjustmentAdjustment += ThreadPoolWorkerThreadAdjustment;
         _session.Source.Clr.IOThreadCreationStart += IOThreadAdjustment;
-        _session.Source.Clr.IOThreadRetirementStart += IOThreadAdjustment;
+        _session.Source.Clr.IOThreadRetirementStop += IOThreadAdjustment;
         _session.Source.Clr.ThreadPoolWorkerThreadStart += WorkerThreadAdjustment;
-        _session.Source.Clr.ThreadPoolWorkerThreadRetirementStart += WorkerThreadAdjustment;
+        _session.Source.Clr.ThreadPoolWorkerThreadRetirementStop += WorkerThreadAdjustment;
         _session.Source.Clr.ThreadPoolWorkerThreadWait += WorkerThreadAdjustment;
 
         try
@@ -129,9 +129,9 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
             _session.Source.Clr.GCPerHeapHistory -= GCPerHeapHistory;
             _session.Source.Clr.ThreadPoolWorkerThreadAdjustmentAdjustment -= ThreadPoolWorkerThreadAdjustment;
             _session.Source.Clr.IOThreadCreationStart -= IOThreadAdjustment;
-            _session.Source.Clr.IOThreadRetirementStart -= IOThreadAdjustment;
+            _session.Source.Clr.IOThreadRetirementStop -= IOThreadAdjustment;
             _session.Source.Clr.ThreadPoolWorkerThreadStart -= WorkerThreadAdjustment;
-            _session.Source.Clr.ThreadPoolWorkerThreadRetirementStart -= WorkerThreadAdjustment;
+            _session.Source.Clr.ThreadPoolWorkerThreadRetirementStop -= WorkerThreadAdjustment;
             _session.Source.Clr.ThreadPoolWorkerThreadWait -= WorkerThreadAdjustment;
 
             throw;
@@ -152,9 +152,9 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
             _session.Source.Clr.GCPerHeapHistory -= GCPerHeapHistory;
             _session.Source.Clr.ThreadPoolWorkerThreadAdjustmentAdjustment -= ThreadPoolWorkerThreadAdjustment;
             _session.Source.Clr.IOThreadCreationStart -= IOThreadAdjustment;
-            _session.Source.Clr.IOThreadRetirementStart -= IOThreadAdjustment;
+            _session.Source.Clr.IOThreadRetirementStop -= IOThreadAdjustment;
             _session.Source.Clr.ThreadPoolWorkerThreadStart -= WorkerThreadAdjustment;
-            _session.Source.Clr.ThreadPoolWorkerThreadRetirementStart -= WorkerThreadAdjustment;
+            _session.Source.Clr.ThreadPoolWorkerThreadRetirementStop -= WorkerThreadAdjustment;
             _session.Source.Clr.ThreadPoolWorkerThreadWait -= WorkerThreadAdjustment;
         }, TaskCreationOptions.LongRunning);
     }

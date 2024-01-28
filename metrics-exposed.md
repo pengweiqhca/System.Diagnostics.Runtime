@@ -44,9 +44,7 @@
 | threading  | `threadpool.completed.items.total`               | `ObservableCounter` | | ThreadPool completed work item count                                                                                             | | ☑️ | ✅ | ✅ |
 | threading  | `threadpool.timer.count`                         | `ObservableUpDownCounter` | | Number of active timers                                                                                                          | |  | ✅ | ✅ |
 | threading  | `threadpool.adjustments.total`                   | `Counter` | | The total number of changes made to the size of the thread pool, labeled by the reason for change                                | adjustment.reason | ☑️ | ☑️ | ☑️ |
-| threading  | `threadpool.worker.thread.count`              | `ObservableUpDownCounter` | | The number of worker threads                                          | | ✅ | ✅ | ✅ |
-| threading  | `threadpool.io.thread.count`                     | `ObservableUpDownCounter` | | The number of io threads                                                | | ✅ | ✅ |  |
+| threading  | `threadpool.worker.thread.count`              | `ObservableUpDownCounter` | | The number of worker threads                                          | | ☑️ | ☑️ | ☑️ |
+| threading  | `threadpool.io.thread.count`                     | `ObservableUpDownCounter` | | The number of io threads                                                | | ☑️ | ☑️ |  |
 | threading | `threadpool.active.worker.thread.count`          | `ObservableUpDownCounter` | | The number of active worker threads                                                                                              | | ☑️ | ☑️ | ☑️ |
 | threading | `threadpool.active.io.thread.count`              | `ObservableUpDownCounter` | | The number of active io threads                                                                                                | | ☑️ | ☑️ |  |
-
-~~~~~~~~~~~~

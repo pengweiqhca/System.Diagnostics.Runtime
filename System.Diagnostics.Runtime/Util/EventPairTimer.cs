@@ -8,29 +8,16 @@ namespace System.Diagnostics.Runtime.Util;
 /// </summary>
 /// <typeparam name="TId">A type of an identifier present on both events</typeparam>
 /// <typeparam name="TEventData">A struct that represents data of interest extracted from the first event</typeparam>
-public class EventPairTimer<TId, TEventData>
+public class EventPairTimer<TId, TEventData>(
+    int startEventId,
+    int endEventId,
+    Func<EventWrittenEventArgs, TId> extractEventIdFn,
+    Func<EventWrittenEventArgs, TEventData> extractData,
+    Cache<TId, TEventData>? cache = null)
     where TId : struct
     where TEventData : struct
 {
-    private readonly Cache<TId, TEventData> _eventStartedAtCache;
-    private readonly int _startEventId;
-    private readonly int _endEventId;
-    private readonly Func<EventWrittenEventArgs, TId> _extractEventIdFn;
-    private readonly Func<EventWrittenEventArgs, TEventData> _extractData;
-
-    public EventPairTimer(
-        int startEventId,
-        int endEventId,
-        Func<EventWrittenEventArgs, TId> extractEventIdFn,
-        Func<EventWrittenEventArgs, TEventData> extractData,
-        Cache<TId, TEventData>? cache = null)
-    {
-        _startEventId = startEventId;
-        _endEventId = endEventId;
-        _extractEventIdFn = extractEventIdFn;
-        _extractData = extractData;
-        _eventStartedAtCache = cache ?? new Cache<TId, TEventData>(TimeSpan.FromMinutes(1));
-    }
+    private readonly Cache<TId, TEventData> _eventStartedAtCache = cache ?? new Cache<TId, TEventData>(TimeSpan.FromMinutes(1));
 
     /// <summary>
     /// Checks if an event is an expected final event- if so, returns true, the duration between it and the start event and
@@ -45,19 +32,19 @@ public class EventPairTimer<TId, TEventData>
         duration = TimeSpan.Zero;
         startEventData = default;
 
-        if (e.EventId == _startEventId)
+        if (e.EventId == startEventId)
         {
 #if NET
-            _eventStartedAtCache.Set(_extractEventIdFn(e), startEventData = _extractData(e), e.TimeStamp);
+            _eventStartedAtCache.Set(extractEventIdFn(e), startEventData = extractData(e), e.TimeStamp);
 #else
-            _eventStartedAtCache.Set(_extractEventIdFn(e), startEventData = _extractData(e), DateTime.Now);
+            _eventStartedAtCache.Set(extractEventIdFn(e), startEventData = extractData(e), DateTime.Now);
 #endif
             return DurationResult.Start;
         }
 
-        if (e.EventId != _endEventId) return DurationResult.Unrecognized;
+        if (e.EventId != endEventId) return DurationResult.Unrecognized;
 
-        if (!_eventStartedAtCache.TryRemove(_extractEventIdFn(e), out startEventData, out var timeStamp))
+        if (!_eventStartedAtCache.TryRemove(extractEventIdFn(e), out startEventData, out var timeStamp))
             return DurationResult.FinalWithoutDuration;
 #if NET
         duration = e.TimeStamp - timeStamp;
@@ -76,26 +63,23 @@ public enum DurationResult
     FinalWithDuration = 3
 }
 
-public sealed class EventPairTimer<TId> : EventPairTimer<TId, int>
+public sealed class EventPairTimer<TId>(
+    int startEventId,
+    int endEventId,
+    Func<EventWrittenEventArgs, TId> extractEventIdFn,
+    Cache<TId, int>? cache = null)
+    : EventPairTimer<TId, int>(startEventId, endEventId, extractEventIdFn, _ => 0, cache)
     where TId : struct
 {
-    public EventPairTimer(int startEventId, int endEventId, Func<EventWrittenEventArgs, TId> extractEventIdFn, Cache<TId, int>? cache = null)
-        : base(startEventId, endEventId, extractEventIdFn, _ => 0, cache)
-    {
-    }
-
     public DurationResult TryGetDuration(EventWrittenEventArgs e, out TimeSpan duration) =>
         TryGetDuration(e, out duration, out _);
 }
 #if NETFRAMEWORK
-public class EventTimer<TId, TData>
+public class EventTimer<TId, TData>(Cache<TId, TData>? cache = null)
     where TId : struct
     where TData : struct
 {
-    private readonly Cache<TId, TData> _eventStartedAtCache;
-
-    public EventTimer(Cache<TId, TData>? cache = null) =>
-        _eventStartedAtCache = cache ?? new(TimeSpan.FromMinutes(1));
+    private readonly Cache<TId, TData> _eventStartedAtCache = cache ?? new(TimeSpan.FromMinutes(1));
 
     public void Start(TId key, TData data, DateTime timeStamp) =>
         _eventStartedAtCache.Set(key, data, timeStamp);

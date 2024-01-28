@@ -54,45 +54,46 @@ public class NativeRuntimeEventParser : IEventParser<NativeRuntimeEventParser>,
         switch (e.EventId)
         {
             case NativeRuntimeEventSource.EventId.AllocTick:
-                {
-                    const uint lohHeapFlag = 0x1;
+            {
+                const uint lohHeapFlag = 0x1;
 
-                    AllocationTick?.Invoke(new((uint)e.Payload![0]!, ((uint)e.Payload![1]! & lohHeapFlag) == lohHeapFlag));
+                AllocationTick?.Invoke(new((uint)e.Payload![0]!, ((uint)e.Payload![1]! & lohHeapFlag) == lohHeapFlag));
 
-                    return;
-                }
+                return;
+            }
             case NativeRuntimeEventSource.EventId.HeapStats:
                 HeapStats?.Invoke(new(e));
 
                 return;
             case NativeRuntimeEventSource.EventId.ContentionStart:
             case NativeRuntimeEventSource.EventId.ContentionStop:
-                {
-                    if (_eventPairTimer.TryGetDuration(e, out var duration) == DurationResult.FinalWithDuration &&
-                        duration > TimeSpan.Zero &&
-                        (byte)e.Payload![0]! == 0)
-                        ContentionEnd?.Invoke(new(duration));
+            {
+                if (_eventPairTimer.TryGetDuration(e, out var duration) == DurationResult.FinalWithDuration &&
+                    duration > TimeSpan.Zero &&
+                    (byte)e.Payload![0]! == 0)
+                    ContentionEnd?.Invoke(new(duration));
 
-                    return;
-                }
+                return;
+            }
             case NativeRuntimeEventSource.EventId.SuspendEEStart:
             case NativeRuntimeEventSource.EventId.RestartEEStop:
-                {
-                    // Execution engine is pausing for a reason other than GC, discard event.
-                    if ((e.EventId != NativeRuntimeEventSource.EventId.SuspendEEStart ||
-                         ((uint)e.Payload![0]! & SuspendGcReasons) != 0) &&
-                        _gcPauseEventTimer.TryGetDuration(e, out var pauseDuration) == DurationResult.FinalWithDuration &&
-                        pauseDuration > TimeSpan.Zero)
-                        PauseComplete?.Invoke(new(pauseDuration));
+            {
+                // Execution engine is pausing for a reason other than GC, discard event.
+                if ((e.EventId != NativeRuntimeEventSource.EventId.SuspendEEStart ||
+                        ((uint)e.Payload![0]! & SuspendGcReasons) != 0) &&
+                    _gcPauseEventTimer.TryGetDuration(e, out var pauseDuration) == DurationResult.FinalWithDuration &&
+                    pauseDuration > TimeSpan.Zero)
+                    PauseComplete?.Invoke(new(pauseDuration));
 
-                    return;
-                }
+                return;
+            }
             case NativeRuntimeEventSource.EventId.GcStart or NativeRuntimeEventSource.EventId.GcStop:
                 switch (_gcEventTimer.TryGetDuration(e, out var gcDuration, out var gcData))
                 {
                     case DurationResult.Start:
                         CollectionStart?.Invoke(new((uint)e.Payload![0]!, (uint)e.Payload![1]!,
                             (NativeRuntimeEventSource.GCReason)e.Payload![2]!));
+
                         break;
                     case DurationResult.FinalWithDuration when gcDuration > TimeSpan.Zero:
                         CollectionComplete?.Invoke(new(gcData.Generation, gcData.Type, gcDuration));
@@ -103,6 +104,7 @@ public class NativeRuntimeEventParser : IEventParser<NativeRuntimeEventParser>,
             case NativeRuntimeEventSource.EventId.ThreadPoolAdjustment:
                 ThreadPoolAdjusted?.Invoke(new((uint)e.Payload![1]!,
                     (NativeRuntimeEventSource.ThreadAdjustmentReason)e.Payload![2]!));
+
                 return;
 #if !NET7_0_OR_GREATER
             case NativeRuntimeEventSource.EventId.IoThreadCreate or NativeRuntimeEventSource.EventId.IoThreadRetire
@@ -120,16 +122,11 @@ public class NativeRuntimeEventParser : IEventParser<NativeRuntimeEventParser>,
         }
     }
 
-    private struct GcData
+    private struct GcData(uint generation, NativeRuntimeEventSource.GCType type)
     {
-        public GcData(uint generation, NativeRuntimeEventSource.GCType type)
-        {
-            Generation = generation;
-            Type = type;
-        }
+        public uint Generation { get; } = generation;
 
-        public uint Generation { get; }
-        public NativeRuntimeEventSource.GCType Type { get; }
+        public NativeRuntimeEventSource.GCType Type { get; } = type;
     }
 }
 #endif

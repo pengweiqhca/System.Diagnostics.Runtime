@@ -155,10 +155,10 @@ public class RuntimeInstrumentation : IDisposable
 #endif
         if (contentionInfo == null) return;
 
-        var totalSeconds = 0d;
-        var contentionSecondsTotal = meter.CreateObservableCounter($"{options.MetricPrefix}lock.contention.time.total",
-            () => totalSeconds > 0 ? new[] { new Measurement<double>(totalSeconds) } : [], "s",
-            "The total amount of time spent contending locks");
+        var totalTicks = 0L;
+        meter.CreateObservableCounter($"{options.MetricPrefix}lock.contention.time.total",
+            () => totalTicks > 0 ? new[] { new Measurement<double>((double)totalTicks / TimeSpan.TicksPerSecond) } : [],
+            "s", "The total amount of time spent contending locks");
 #if NETFRAMEWORK
         var contentionTotal = 0L;
 
@@ -168,15 +168,12 @@ public class RuntimeInstrumentation : IDisposable
 
         contentionInfo.ContentionEnd += e =>
         {
-            lock (contentionSecondsTotal) totalSeconds += e.ContentionDuration.TotalSeconds;
+            Interlocked.Add(ref totalTicks, e.ContentionDuration.Ticks);
 
             Interlocked.Increment(ref contentionTotal);
         };
 #else
-        contentionInfo.ContentionEnd += e =>
-        {
-            lock (contentionSecondsTotal) totalSeconds += e.ContentionDuration.TotalSeconds;
-        };
+        contentionInfo.ContentionEnd += e => Interlocked.Add(ref totalTicks, e.ContentionDuration.Ticks);
 #endif
     }
 #if NET

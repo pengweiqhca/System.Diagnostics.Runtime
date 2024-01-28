@@ -2,6 +2,7 @@
 using OpenTelemetry.Metrics;
 using Prometheus;
 using System.Diagnostics.Runtime;
+using System.Numerics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +14,7 @@ builder.Services.AddSingleton(Sdk.CreateMeterProviderBuilder()
     .AddRuntimeInstrumentation()
     .AddView(instrument =>
         instrument.Name is "process.runtime.dotnet.gc.collection.seconds" or "process.runtime.dotnet.gc.pause.seconds"
-            ? new ExplicitBucketHistogramConfiguration { Boundaries = new[] { 0.001, 0.01, 0.05, 0.1, 0.5, 1, 10 } }
+            ? new ExplicitBucketHistogramConfiguration { Boundaries = [0.001, 0.01, 0.05, 0.1, 0.5, 1, 10] }
             : null)
     .AddPrometheusExporter()
     .Build()!);

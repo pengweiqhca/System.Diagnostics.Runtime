@@ -14,12 +14,14 @@ public class TestHelpers
         // In .NET 6.0, they changed the signature of these constructors- handle this annoyance
         if (typeof(EventWrittenEventArgs).GetConstructors(bindFlags).Any(x => x.GetParameters().Length == 1))
         {
-            args = (EventWrittenEventArgs)typeof(EventWrittenEventArgs).CreateInstance(new[] { typeof(EventSource) }, Flags.NonPublic | Flags.Instance, new object?[] { null });
+            args = (EventWrittenEventArgs)typeof(EventWrittenEventArgs).CreateInstance([typeof(EventSource)],
+                Flags.NonPublic | Flags.Instance, [null]);
 
             args.SetPropertyValue(nameof(args.EventId), eventId);
         }
         else
-            args = (EventWrittenEventArgs)typeof(EventWrittenEventArgs).CreateInstance(new[] { typeof(EventSource), typeof(int) }, Flags.NonPublic | Flags.Instance, null, eventId);
+            args = (EventWrittenEventArgs)typeof(EventWrittenEventArgs).CreateInstance(
+                [typeof(EventSource), typeof(int)], Flags.NonPublic | Flags.Instance, null, eventId);
 
         args.SetPropertyValue(nameof(args.Payload), new ReadOnlyCollection<object>(payload));
 #if NET
@@ -53,7 +55,7 @@ public class TestHelpers
         }
 
         public bool Fired => History.Count > 0;
-        public List<T> History { get; } = new();
+        public List<T> History { get; } = [];
         public T LastEvent => History.Last();
 
     }

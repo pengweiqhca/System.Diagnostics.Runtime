@@ -86,7 +86,7 @@ public abstract class EventCounterParserBase<T> : IEventCounterParser<T>
             {
                 var (success, value) = parseCounterFunc(payload);
                 if (success)
-                    handler.Method.Invoke(handler.Target, new[] { value });
+                    handler.Method.Invoke(handler.Target, [value]);
                 else
                     throw new MismatchedCounterTypeException($"Counter '{counterName}' could not be parsed by function {parseCounterFunc.Method} indicating the counter has been declared as the wrong type.");
             }

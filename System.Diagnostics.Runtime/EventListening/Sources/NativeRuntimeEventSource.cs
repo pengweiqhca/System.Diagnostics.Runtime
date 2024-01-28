@@ -245,6 +245,7 @@ public class NativeRuntimeEventSource
         public const int WorkerThreadRetirementStop = 53;
         public const int ThreadPoolAdjustment = 55;
         public const int WorkerThreadWait = 57;
+        public const int ExceptionThrown = 80;
         public const int ContentionStart = 81;
         public const int ContentionStop = 91;
         public const int PerHeapHistory = 204;

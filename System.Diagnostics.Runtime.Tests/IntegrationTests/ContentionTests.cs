@@ -42,6 +42,7 @@ internal class Given_Contention_Events_Are_Enabled_For_Contention_Stats : Integr
                 return Task.WhenAll(Enumerable.Range(1, numThreads)
                     .Select(_ => Task.Run(() =>
                     {
+                        Console.WriteLine(Process.GetCurrentProcess().Threads[Thread.CurrentThread.ManagedThreadId - 1].Id);
                         lock (key)
                         {
                             Thread.Sleep(sleepForMs);
@@ -53,13 +54,13 @@ internal class Given_Contention_Events_Are_Enabled_For_Contention_Stats : Integr
                 const int numLocksContended = numThreads - 1;
 
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}lock.contention.total"),
-                    Is.GreaterThan(numLocksContended).After(30000, 1000));
+                    Is.GreaterThan(numLocksContended).After(3000, 100));
 
                 // Pattern of expected contention times is: 50ms, 100ms, 150ms, etc.
                 var expectedDelay = TimeSpan.FromMilliseconds(Enumerable.Range(1, numLocksContended).Aggregate(sleepForMs, (acc, next) => acc + sleepForMs * next));
 
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}lock.contention.time.total"),
-                    Is.EqualTo(expectedDelay.Seconds).Within(sleepForMs));
+                    Is.GreaterThan(expectedDelay.TotalSeconds));
             }, $"{Options.MetricPrefix}lock.contention.total",
             $"{Options.MetricPrefix}lock.contention.time.total");
     }

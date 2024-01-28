@@ -104,9 +104,9 @@ public static class InstrumentTest
             }
         };
 #if NETFRAMEWORK
-        using var timer = new Timer(static state => ((MeterListener)state!).RecordObservableInstruments(), listener, 10, 10);
+        using var timer = new Timer(static state => ((MeterListener)state!).RecordObservableInstruments(), listener, 100, 100);
 #else
-        var timer = new Timer(static state => ((MeterListener)state!).RecordObservableInstruments(), listener, 10, 10);
+        var timer = new Timer(static state => ((MeterListener)state!).RecordObservableInstruments(), listener, 100, 100);
 
         await using var _ = timer.ConfigureAwait(false);
 #endif

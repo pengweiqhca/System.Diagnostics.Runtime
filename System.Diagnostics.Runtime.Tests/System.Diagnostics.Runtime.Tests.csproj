@@ -4,7 +4,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyOriginatorKeyFile>..\Key.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>True</SignAssembly>
-    <TargetFrameworks>net8.0;net7.0;net6.0;net471</TargetFrameworks>
+    <TargetFrameworks>net8.0;net471</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

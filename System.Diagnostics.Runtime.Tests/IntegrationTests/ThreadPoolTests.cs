@@ -8,7 +8,7 @@ internal class Enabled_For_ThreadPoolStats : IntegrationTestBase
 {
     protected override RuntimeMetricsOptions GetOptions() =>
         new() { ThreadingEnabled = true, EnabledNativeRuntime = true };
-#if !NET7_0_OR_GREATER
+#if NETFRAMEWORK
     [Test]
     public Task When_IO_work_is_executed_on_the_thread_pool_then_the_number_of_io_threads_is_measured()
     {
@@ -25,10 +25,10 @@ internal class Enabled_For_ThreadPoolStats : IntegrationTestBase
 
                 await Task.WhenAll(httpTasks).ConfigureAwait(false);
             }, measurements =>
-                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}threadpool.active.io.thread.count"), Is.GreaterThanOrEqualTo(1).After(5000, 10)),
-            $"{Options.MetricPrefix}threadpool.active.io.thread.count");
+                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}thread_pool.active.io.threads.count"), Is.GreaterThanOrEqualTo(1).After(5000, 10)),
+            $"{Options.MetricPrefix}thread_pool.active.io.threads.count");
     }
-#endif
+
     [Test]
     public Task When_blocking_work_is_executed_on_the_thread_pool()
     {
@@ -39,10 +39,10 @@ internal class Enabled_For_ThreadPoolStats : IntegrationTestBase
         return InstrumentTest.Assert(() => Enumerable.Range(1, numTasksToSchedule)
                 .Select(_ => Task.Run(() => Thread.Sleep(sleepDelay)))
                 .ToArray(), measurements =>
-                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}threadpool.active.worker.thread.count"), Is.GreaterThan(Environment.ProcessorCount).After(desiredSecondsToBlock * 1000, 10)),
-            $"{Options.MetricPrefix}threadpool.active.worker.thread.count");
+                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}thread_pool.active.worker.threads.count"), Is.GreaterThan(Environment.ProcessorCount).After(desiredSecondsToBlock * 1000, 10)),
+            $"{Options.MetricPrefix}thread_pool.active.worker.threads.count");
     }
-#if NET
+#else
     [Test]
     public Task When_work_is_executed_on_the_thread_pool_then_executed_work_is_measured()
     {
@@ -52,10 +52,10 @@ internal class Enabled_For_ThreadPoolStats : IntegrationTestBase
                 .Select(_ => Task.Run(() => { }))),
             measurements =>
             {
-                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}threadpool.thread.count"), Is.GreaterThanOrEqualTo(Environment.ProcessorCount).After(2_000, 10));
-                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}threadpool.completed.items.total"), Is.GreaterThanOrEqualTo(numTasksToSchedule).After(2_000, 10));
-            }, $"{Options.MetricPrefix}threadpool.thread.count",
-            $"{Options.MetricPrefix}threadpool.completed.items.total");
+                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}thread_pool.threads.count"), Is.GreaterThanOrEqualTo(Environment.ProcessorCount).After(2_000, 10));
+                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}thread_pool.completed_items.count"), Is.GreaterThanOrEqualTo(numTasksToSchedule).After(2_000, 10));
+            }, $"{Options.MetricPrefix}thread_pool.threads.count",
+            $"{Options.MetricPrefix}thread_pool.completed_items.count");
     }
 
     [Test]
@@ -67,7 +67,7 @@ internal class Enabled_For_ThreadPoolStats : IntegrationTestBase
                 .Select(n => Task.Delay(3000 + n))
                 .ToArray(),
             measurements =>
-                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}threadpool.timer.count"), Is.GreaterThanOrEqualTo(numTimersToSchedule).After(2_000, 10)), $"{Options.MetricPrefix}threadpool.timer.count");
+                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}timer.count"), Is.GreaterThanOrEqualTo(numTimersToSchedule).After(2_000, 10)), $"{Options.MetricPrefix}timer.count");
     }
 
     [Test]
@@ -79,12 +79,12 @@ internal class Enabled_For_ThreadPoolStats : IntegrationTestBase
 
         return InstrumentTest.Assert(() => Enumerable.Range(1, numTasksToSchedule)
                 .Select(_ => Task.Run(() => Thread.Sleep(sleepDelay)))
-                .ToArray(), measurements => Assert.That(() => measurements.Sum($"{Options.MetricPrefix}threadpool.queue.length"), Is.GreaterThan(0).After(desiredSecondsToBlock * 1000, 10)),
-            $"{Options.MetricPrefix}threadpool.queue.length");
+                .ToArray(), measurements => Assert.That(() => measurements.Sum($"{Options.MetricPrefix}thread_pool.queue.length"), Is.GreaterThan(0).After(desiredSecondsToBlock * 1000, 10)),
+            $"{Options.MetricPrefix}thread_pool.queue.length");
     }
 #endif
 }
-#if !NET7_0_OR_GREATER
+#if NETFRAMEWORK
 internal class Given_Native_Runtime_Are_Enabled_For_ThreadPoolStats : IntegrationTestBase
 {
     protected override RuntimeMetricsOptions GetOptions() => new() { ThreadingEnabled = true, EnabledNativeRuntime = true };
@@ -96,8 +96,8 @@ internal class Given_Native_Runtime_Are_Enabled_For_ThreadPoolStats : Integratio
 
         return InstrumentTest.Assert(() => Task.WhenAll(Enumerable.Range(1, numTasksToSchedule)
                 .Select(_ => Task.Run(() => { }))),
-            measurements => Assert.That(() => measurements.Sum($"{Options.MetricPrefix}threadpool.completed.items.total"), Is.GreaterThanOrEqualTo(numTasksToSchedule).After(2_000, 10)),
-            $"{Options.MetricPrefix}threadpool.completed.items.total");
+            measurements => Assert.That(() => measurements.Sum($"{Options.MetricPrefix}thread_pool.completed_items.count"), Is.GreaterThanOrEqualTo(numTasksToSchedule).After(2_000, 10)),
+            $"{Options.MetricPrefix}thread_pool.completed_items.count");
     }
 
     [Test]
@@ -110,8 +110,8 @@ internal class Given_Native_Runtime_Are_Enabled_For_ThreadPoolStats : Integratio
         return InstrumentTest.Assert(() => Enumerable.Range(1, numTasksToSchedule)
             .Select(_ => Task.Run(() => Thread.Sleep(sleepDelay)))
             .ToArray(), measurements =>
-            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}threadpool.queue.length"), Is.GreaterThanOrEqualTo(numTasksToSchedule).After(desiredSecondsToBlock * 1000, 10)),
-            $"{Options.MetricPrefix}threadpool.queue.length");
+            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}thread_pool.queue.length"), Is.GreaterThanOrEqualTo(numTasksToSchedule).After(desiredSecondsToBlock * 1000, 10)),
+            $"{Options.MetricPrefix}thread_pool.queue.length");
     }
 #elif NET6
     [Test]
@@ -125,8 +125,8 @@ internal class Given_Native_Runtime_Are_Enabled_For_ThreadPoolStats : Integratio
         {
             Assert.NotNull(measurements);
 
-            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}threadpool.adjustments.total"), Is.GreaterThanOrEqualTo(1));
-        }, $"{Options.MetricPrefix}threadpool.adjustments.total");
+            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}thread_pool.adjustments.total"), Is.GreaterThanOrEqualTo(1));
+        }, $"{Options.MetricPrefix}thread_pool.adjustments.total");
 #endif
     [Test]
     public Task When_IO_work_is_executed_on_the_thread_pool_then_the_number_of_io_threads_is_measured()
@@ -144,8 +144,8 @@ internal class Given_Native_Runtime_Are_Enabled_For_ThreadPoolStats : Integratio
 
                 await Task.WhenAll(httpTasks).ConfigureAwait(false);
             }, measurements =>
-                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}threadpool.io.thread.count"), Is.GreaterThanOrEqualTo(1).After(30000, 10)),
-            $"{Options.MetricPrefix}threadpool.io.thread.count");
+                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}thread_pool.io.threads.count"), Is.GreaterThanOrEqualTo(1).After(30000, 10)),
+            $"{Options.MetricPrefix}thread_pool.io.threads.count");
     }
 }
 #endif

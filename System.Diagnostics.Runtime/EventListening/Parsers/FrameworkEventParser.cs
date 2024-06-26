@@ -3,7 +3,7 @@ using System.Diagnostics.Tracing;
 
 namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
-public class FrameworkEventParser : IEventParser<FrameworkEventParser>, FrameworkEventParser.Events.Verbose
+public class FrameworkEventParser : FrameworkEventParser.Events.Verbose, IEventListener
 {
     public event Action? Enqueue;
     public event Action? Dequeue;
@@ -26,7 +26,7 @@ public class FrameworkEventParser : IEventParser<FrameworkEventParser>, Framewor
 
     public static class Events
     {
-        public interface Verbose : IEvents
+        public interface Verbose
         {
             event Action Enqueue;
             event Action Dequeue;

@@ -5,7 +5,7 @@ namespace System.Diagnostics.Runtime.EventListening;
 
 public static class NativeEvent
 {
-    public interface INativeEvent : IEvents
+    public interface INativeEvent
     {
         event Action<ContentionEndEvent> ContentionEnd;
         event Action<HeapStatsEvent> HeapStats;
@@ -14,10 +14,10 @@ public static class NativeEvent
         event Action<CollectionCompleteEvent> CollectionComplete;
         event Action<AllocationTickEvent> AllocationTick;
         event Action<ThreadPoolAdjustedReasonEvent> ThreadPoolAdjusted;
-#if !NET7_0_OR_GREATER
+#if NETFRAMEWORK
         event Action<ThreadPoolAdjustedEvent> IoThreadPoolAdjusted;
-#endif
         event Action<ThreadPoolAdjustedEvent> WorkerThreadPoolAdjusted;
+#endif
     }
 
     public interface IExtendNativeEvent : INativeEvent
@@ -70,7 +70,7 @@ public static class NativeEvent
 
     public record struct PauseCompleteEvent(TimeSpan PauseDuration);
 
-    public record struct CollectionStartEvent(long Count, long Generation, NativeRuntimeEventSource.GCReason Reason);
+    public record struct CollectionStartEvent(NativeRuntimeEventSource.GCReason Reason);
 
     public record struct CollectionCompleteEvent(long Generation, NativeRuntimeEventSource.GCType Type, TimeSpan Duration);
 

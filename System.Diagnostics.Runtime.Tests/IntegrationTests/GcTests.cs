@@ -7,34 +7,9 @@ internal class Given_Are_Available_For_GcStats : IntegrationTestBase
     protected override RuntimeMetricsOptions GetOptions() => new() { GcEnabled = true };
 #if NET
     [Test]
-    public Task When_objects_are_allocated_then_the_allocated_bytes_counter_is_increased() =>
-        InstrumentTest.Assert(() =>
-            {
-                // allocate roughly 100kb+ of small objects
-                for (var i = 0; i < 11; i++) _ = new byte[10_000];
-            }, measurements => Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.allocated.total"), Is.GreaterThanOrEqualTo(100_000).After(2_000, 10)),
-            $"{Options.MetricPrefix}gc.allocated.total");
-
-    [Test]
-    public Task When_a_garbage_collection_is_performed_then_the_gc_fragmentation_can_be_calculated() =>
-        InstrumentTest.Assert(() => GC.Collect(0, GCCollectionMode.Forced),
-            measurements => Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.fragmentation"),
-                Is.GreaterThan(0.0).After(2000, 10)), $"{Options.MetricPrefix}gc.fragmentation");
-
-    [Test]
     public Task Computer_memory_available() =>
-        InstrumentTest.Assert(measurements => Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.memory.total.available"),
-            Is.GreaterThan(0.0).After(2000, 10)), $"{Options.MetricPrefix}gc.memory.total.available");
-
-    [Test]
-    public Task When_a_garbage_collection_is_performed_then_the_pause_ratios_can_be_calculated() =>
-        InstrumentTest.Assert(() =>
-        {
-            // arrange
-            for (var i = 0; i < 5; i++)
-                GC.Collect(2, GCCollectionMode.Forced, true, true);
-        }, measurements => Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.pause.ratio"),
-            Is.GreaterThan(0.0).After(2000, 10)), $"{Options.MetricPrefix}gc.pause.ratio");
+        InstrumentTest.Assert(measurements => Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.available_memory.size"),
+            Is.GreaterThan(0.0).After(2000, 10)), $"{Options.MetricPrefix}gc.available_memory.size");
 
     [Test]
     public Task When_a_garbage_collection_is_performed_then_the_heap_sizes_are_updated() =>
@@ -47,22 +22,24 @@ internal class Given_Are_Available_For_GcStats : IntegrationTestBase
             GC.Collect(2, GCCollectionMode.Forced, true, true);
         }, measurements =>
         {
-            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc.generation", "0"),
+            Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.objects.size"),
+                Is.GreaterThan(0.0).After(2000, 10));
+            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "generation", "gen0"),
                 Is.GreaterThan(0).After(2000, 10));
-            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc.generation", "1"),
+            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "generation", "gen1"),
                 Is.GreaterThan(0).After(2000, 10));
-            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc.generation", "2"),
+            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "generation", "gen2"),
                 Is.GreaterThan(0).After(5000, 10));
-            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc.generation", "loh"),
+            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "generation", "loh"),
                 Is.GreaterThan(0).After(5000, 10));
-            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc.generation", "poh"),
+            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "generation", "poh"),
                 Is.GreaterThan(0).After(5000, 10));
-        }, $"{Options.MetricPrefix}gc.heap.size");
+        }, $"{Options.MetricPrefix}gc.heap.size", $"{Options.MetricPrefix}gc.objects.size");
 #else
     [Test]
     public Task When_a_garbage_collection_is_performed_then_the_heap_sizes_are_updated() =>
-        InstrumentTest.Assert(measurements => Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.heap.size"),
-            Is.GreaterThan(0.0).After(2000, 10)), $"{Options.MetricPrefix}gc.heap.size");
+        InstrumentTest.Assert(measurements => Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.objects.size"),
+            Is.GreaterThan(0.0).After(2000, 10)), $"{Options.MetricPrefix}gc.objects.size");
 #endif
     [Test]
     public Task When_collections_happen_then_the_collection_count_is_increased([Values(0, 1, 2)] int generation)
@@ -72,51 +49,13 @@ internal class Given_Are_Available_For_GcStats : IntegrationTestBase
         return InstrumentTest.Assert(() =>
             {
                 // run collections
-                for (var i = 0; i < numCollectionsToRun; i++) GC.Collect(generation, GCCollectionMode.Forced);
-            }, measurements => Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.collection.total", "gc.generation", generation.ToString()),
+                for (var i = 0; i < numCollectionsToRun; i++) GC.Collect(generation, GCCollectionMode.Forced, true);
+            }, measurements => Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.collections.count", "generation", "gen" + generation),
                 Is.GreaterThanOrEqualTo(numCollectionsToRun).After(2_000, 10)),
-            $"{Options.MetricPrefix}gc.collection.total");
+            $"{Options.MetricPrefix}gc.collections.count");
     }
 }
-#if NET
-internal class Given_System_Runtime_Are_Available_For_GcStats : IntegrationTestBase
-{
-    protected override RuntimeMetricsOptions GetOptions() => new() { GcEnabled = true, EnabledSystemRuntime = true };
 
-    [Test]
-    public Task When_a_garbage_collection_is_performed_then_the_heap_sizes_are_updated() =>
-        InstrumentTest.Assert(() =>
-        {
-            var array = new byte[1_000_000];
-
-            array = null;
-
-            GC.Collect(2, GCCollectionMode.Forced, true, true);
-        }, measurements =>
-        {
-            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc.generation", "0"),
-                Is.GreaterThan(0).After(2000, 10));
-            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc.generation", "1"),
-                Is.GreaterThan(0).After(2000, 10));
-            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc.generation", "2"),
-                Is.GreaterThan(0).After(5000, 10));
-            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc.generation", "loh"),
-                Is.GreaterThan(0).After(5000, 10));
-            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc.generation", "poh"),
-                Is.GreaterThan(0).After(5000, 10));
-        }, $"{Options.MetricPrefix}gc.heap.size");
-
-    [Test]
-    public Task When_a_garbage_collection_is_performed_then_the_pause_ratios_can_be_calculated() =>
-        InstrumentTest.Assert(() =>
-        {
-            // arrange
-            for (var i = 0; i < 5; i++)
-                GC.Collect(2, GCCollectionMode.Forced, true, true);
-        }, measurements => Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.pause.ratio"),
-            Is.GreaterThan(0.0).After(2000, 10)), $"{Options.MetricPrefix}gc.pause.ratio");
-}
-#endif
 internal class Given_Native_Runtime_Are_Available_For_GcStats : IntegrationTestBase
 {
     protected override RuntimeMetricsOptions GetOptions() => new() { GcEnabled = true, EnabledNativeRuntime = true };
@@ -129,8 +68,8 @@ internal class Given_Native_Runtime_Are_Available_For_GcStats : IntegrationTestB
 
                 GC.Collect(0, GCCollectionMode.Forced);
             },
-            measurements => Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.fragmentation"),
-                Is.GreaterThan(0.0).After(10000, 100)), $"{Options.MetricPrefix}gc.fragmentation");
+            measurements => Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.heap.fragmentation.size"),
+                Is.GreaterThan(0.0).After(10000, 100)), $"{Options.MetricPrefix}gc.heap.fragmentation.size");
 #endif
     [Test]
     public Task When_a_garbage_collection_is_performed_then_the_heap_sizes_are_updated() =>
@@ -148,16 +87,16 @@ internal class Given_Native_Runtime_Are_Available_For_GcStats : IntegrationTestB
                 }
             }, measurements =>
             {
-                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc.generation", "0"),
+                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "generation", "gen0"),
                     Is.GreaterThan(0).After(5000, 10));
-                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc.generation", "1"),
+                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "generation", "gen1"),
                     Is.GreaterThan(0).After(5000, 10));
-                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc.generation", "2"),
+                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "generation", "gen2"),
                     Is.GreaterThan(0).After(5000, 10));
-                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc.generation", "loh"),
+                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "generation", "loh"),
                     Is.GreaterThan(0).After(5000, 10));
 #if NET
-                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "gc.generation", "poh"),
+                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "generation", "poh"),
                     Is.GreaterThan(0).After(2000, 10));
 #endif
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.pinned.objects"),
@@ -182,10 +121,12 @@ internal class Given_Native_Runtime_Are_Available_For_GcStats : IntegrationTestB
             // a gen 0 collection to occur.
             const int minExpectedCollections = numCollectionsToRun / 2;
 
-            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.collection.total", "gc.generation", generation.ToString()),
-                Is.GreaterThanOrEqualTo(minExpectedCollections).After(5000, 10)
-            );
-        }, $"{Options.MetricPrefix}gc.collection.total");
+            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.collections.count", "generation", "gen" + generation),
+                Is.GreaterThanOrEqualTo(minExpectedCollections).After(5000, 10));
+
+            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.reasons.count"),
+                Is.GreaterThanOrEqualTo(minExpectedCollections).After(5000, 10));
+        }, $"{Options.MetricPrefix}gc.collections.count", $"{Options.MetricPrefix}gc.reasons.count");
     }
 
     [Test]
@@ -220,13 +161,13 @@ internal class Given_Native_Runtime_Are_Available_For_GcStats : IntegrationTestB
                 GC.Collect(2, GCCollectionMode.Forced, true, true);
             }, measurements =>
             {
-                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.collection.time"), Is.GreaterThan(0).After(5000, 10)); // at least 3 generations
-                Assert.That(() => measurements.Values($"{Options.MetricPrefix}gc.collection.time"), Is.All.GreaterThan(0));
-                Assert.That(() => measurements.Values($"{Options.MetricPrefix}gc.collection.total"), Is.All.GreaterThan(0));
-                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.pause.time"), Is.GreaterThan(0).After(5000, 10));
-            }, $"{Options.MetricPrefix}gc.collection.time",
-            $"{Options.MetricPrefix}gc.collection.total",
-            $"{Options.MetricPrefix}gc.pause.time");
+                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.collections.duration"), Is.GreaterThan(0).After(5000, 10)); // at least 3 generations
+                Assert.That(() => measurements.Values($"{Options.MetricPrefix}gc.collections.duration"), Is.All.GreaterThan(0));
+                Assert.That(() => measurements.Values($"{Options.MetricPrefix}gc.reasons.count"), Is.All.GreaterThan(0));
+                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.pause.duration"), Is.GreaterThan(0).After(5000, 10));
+            }, $"{Options.MetricPrefix}gc.collections.duration",
+            $"{Options.MetricPrefix}gc.reasons.count",
+            $"{Options.MetricPrefix}gc.pause.duration");
 
     [Test]
     public Task When_100kb_of_small_objects_are_allocated_then_the_allocated_bytes_counter_is_increased() =>
@@ -234,8 +175,8 @@ internal class Given_Native_Runtime_Are_Available_For_GcStats : IntegrationTestB
             {
                 // allocate roughly 100kb+ of small objects
                 for (var i = 0; i < 11; i++) _ = new byte[10_000];
-            }, measurements => Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.allocated.total", "gc.heap", "soh"), Is.GreaterThanOrEqualTo(100_000).After(2_000, 10)),
-            $"{Options.MetricPrefix}gc.allocated.total");
+            }, measurements => Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap_allocations.size", "heap", "soh"), Is.GreaterThanOrEqualTo(100_000).After(2_000, 10)),
+            $"{Options.MetricPrefix}gc.heap_allocations.size");
 
     [Test]
     public Task When_a_100kb_large_object_is_allocated_then_the_allocated_bytes_counter_is_increased() =>
@@ -243,8 +184,8 @@ internal class Given_Native_Runtime_Are_Available_For_GcStats : IntegrationTestB
             {
                 // allocate roughly 100kb+ of small objects
                 for (var i = 0; i < 11; i++) _ = new byte[100_000];
-            }, measurements => Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.allocated.total", "gc.heap", "loh"), Is.GreaterThanOrEqualTo(100_0000).After(2_000, 10)),
-            $"{Options.MetricPrefix}gc.allocated.total");
+            }, measurements => Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap_allocations.size", "heap", "loh"), Is.GreaterThanOrEqualTo(100_0000).After(2_000, 10)),
+            $"{Options.MetricPrefix}gc.heap_allocations.size");
 
     private class FinalizableTest
     {

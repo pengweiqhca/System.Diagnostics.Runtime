@@ -4,7 +4,7 @@ namespace System.Diagnostics.Runtime.Tests.IntegrationTests;
 
 public static class InstrumentTest
 {
-    private static readonly IReadOnlyCollection<string> DebugMetrics = new[] { "process.runtime.dotnet.debug.event.count", "process.runtime.dotnet.debug.event.seconds.total", "process.runtime.dotnet.debug.publish.thread.count" };
+    private static readonly IReadOnlyCollection<string> DebugMetrics = ["process.runtime.dotnet.debug.event.count", "process.runtime.dotnet.debug.event.seconds.total", "process.runtime.dotnet.debug.publish.threads.count"];
 
     public static Task<IReadOnlyCollection<MeasurementValue>> Assert(
         Action<IReadOnlyList<MeasurementValue>> assert, params string?[] instruments) =>

@@ -14,7 +14,7 @@ public static class MeterProviderBuilderExtensions
     /// <param name="builder"><see cref="MeterProviderBuilder"/> being configured.</param>
     /// <param name="configure">Runtime metrics options.</param>
     /// <returns>The instance of <see cref="MeterProviderBuilder"/> to chain the calls.</returns>
-    public static MeterProviderBuilder AddRuntimeInstrumentation(
+    public static MeterProviderBuilder AddExampleInstrumentation(
         this MeterProviderBuilder builder,
         Action<RuntimeMetricsOptions>? configure = null)
     {
@@ -31,8 +31,6 @@ public static class MeterProviderBuilderExtensions
         }
         else configure.Invoke(options);
 
-        builder.AddMeter(RuntimeInstrumentation.InstrumentationName);
-
-        return builder.AddInstrumentation(() => new RuntimeInstrumentation(options));
+        return builder.AddProcessRuntimeInstrumentation(options);
     }
 }

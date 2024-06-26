@@ -84,7 +84,6 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
                 TraceEventLevel.Verbose,
                 (ulong)(
                     ClrTraceEventParser.Keywords.Contention | // thread contention timing
-                    ClrTraceEventParser.Keywords.Exception | // get the first chance exceptions
                     ClrTraceEventParser.Keywords.GC | // garbage collector details
                     ClrTraceEventParser.Keywords.Threading // threadpool events
                 ), new()
@@ -95,10 +94,10 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
                     EventIDsToEnable = new List<int>
                     {
                         NativeRuntimeEventSource.EventId.GcStart,
-                        NativeRuntimeEventSource.EventId.GcStop,
-                        NativeRuntimeEventSource.EventId.RestartEEStop,
+                        NativeRuntimeEventSource.EventId.GcEnd,
+                        NativeRuntimeEventSource.EventId.RestartEEEnd,
                         NativeRuntimeEventSource.EventId.HeapStats,
-                        NativeRuntimeEventSource.EventId.SuspendEEStart,
+                        NativeRuntimeEventSource.EventId.SuspendEE,
                         NativeRuntimeEventSource.EventId.AllocTick,
                         NativeRuntimeEventSource.EventId.IoThreadCreate,
                         NativeRuntimeEventSource.EventId.IoThreadTerminate,
@@ -221,7 +220,7 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
         _gcTimer.Start(data.Count, (NativeRuntimeEventSource.GCType)data.Type, data.TimeStamp);
 
         if (CollectionStart is { } func)
-            func(new((uint)data.Count, (uint)data.Depth, (NativeRuntimeEventSource.GCReason)data.Reason));
+            func(new((NativeRuntimeEventSource.GCReason)data.Reason));
     }
 
     private void GCStop(GCEndTraceData data)

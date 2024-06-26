@@ -228,24 +228,23 @@ public class NativeRuntimeEventSource
     public static class EventId
     {
         public const int GcStart = 1;
-        public const int GcStop = 2;
-        public const int RestartEEStop = 3;
+        public const int GcEnd = 2;
+        public const int RestartEEEnd = 3;
         public const int HeapStats = 4;
-        public const int SuspendEEStart = 9;
+        public const int SuspendEE = 9;
         public const int AllocTick = 10;
-#if !NET7_0_OR_GREATER
+#if NETFRAMEWORK
         public const int IoThreadCreate = 44;
         public const int IoThreadTerminate = 45;
         public const int IoThreadRetire = 46;
         public const int IoThreadUnretire = 47;
-#endif
         public const int WorkerThreadStart = 50;
         public const int WorkerThreadStop = 51;
         public const int WorkerThreadRetirementStart = 52;
         public const int WorkerThreadRetirementStop = 53;
+#endif
         public const int ThreadPoolAdjustment = 55;
         public const int WorkerThreadWait = 57;
-        public const int ExceptionThrown = 80;
         public const int ContentionStart = 81;
         public const int ContentionStop = 91;
         public const int PerHeapHistory = 204;

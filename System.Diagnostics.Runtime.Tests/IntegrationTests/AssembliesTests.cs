@@ -13,9 +13,9 @@ internal class Enabled_For_AssembliesStats : IntegrationTestBase
 
         return InstrumentTest.Assert(measurements =>
             {
-                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}assembly.count"),
+                Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}assemblies.count"),
                     Is.GreaterThanOrEqualTo(assemblies).After(2_000, 10));
             },
-            $"{Options.MetricPrefix}assembly.count");
+            $"{Options.MetricPrefix}assemblies.count");
     }
 }

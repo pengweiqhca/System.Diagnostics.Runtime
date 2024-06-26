@@ -21,19 +21,9 @@ internal sealed class DotNetEventListener : EventListener
     {
         if (e.EventSource == null || e.EventSource.Name != _eventListener.EventSourceName) return;
 
-        EnableEvents(e.EventSource, _level, _eventListener.Keywords, GetEventListenerArguments(_eventListener));
+        EnableEvents(e.EventSource, _level, _eventListener.Keywords);
 
         StartedReceivingEvents = true;
-    }
-
-    private static Dictionary<string, string?> GetEventListenerArguments(IEventListener listener)
-    {
-        var args = new Dictionary<string, string?>();
-
-        if (listener is IEventCounterListener counterListener)
-            args["EventCounterIntervalSec"] = counterListener.RefreshIntervalSeconds.ToString();
-
-        return args;
     }
 
     protected override void OnEventWritten(EventWrittenEventArgs eventData)

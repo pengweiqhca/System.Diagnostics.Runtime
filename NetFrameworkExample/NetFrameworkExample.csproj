@@ -10,10 +10,10 @@
     <Compile Include="../AspNetCoreExample/MeterProviderBuilderExtensions.cs" />
     <Compile Include="../AspNetCoreExample/Simulate.cs" />
 
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.7.*" />
-    <PackageReference Include="OpenTelemetry.Exporter.Prometheus.HttpListener" Version="1.7.*-*" />
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="*-*" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="$(OpenTelemetryVersion)" />
+    <PackageReference Include="OpenTelemetry.Exporter.Prometheus.HttpListener" Version="$(OpenTelemetryVersion)-*" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="$(OpenTelemetryVersion)" />
 
     <ProjectReference Include="..\System.Diagnostics.Runtime\System.Diagnostics.Runtime.csproj" />
   </ItemGroup>

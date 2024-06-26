@@ -5,12 +5,8 @@ namespace AspNetCoreExample.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class SimulateController : ControllerBase
+public class SimulateController(IHttpClientFactory httpClientFactory) : ControllerBase
 {
-    private readonly IHttpClientFactory _httpClientFactory;
-
-    public SimulateController(IHttpClientFactory httpClientFactory) => _httpClientFactory = httpClientFactory;
-
     [HttpGet]
     public async Task<ActionResult<IEnumerable<string>>> Get(
         bool simulateAlloc = true,
@@ -21,7 +17,7 @@ public class SimulateController : ControllerBase
         bool simulateOutgoingNetwork = true)
     {
         await Simulate.Invoke(simulateAlloc, simulateContention, simulateJit, simulateException, simulateBlocking,
-                simulateOutgoingNetwork ? _httpClientFactory.CreateClient : null)
+                simulateOutgoingNetwork ? httpClientFactory.CreateClient : null)
             .ConfigureAwait(false);
 
         return new[] { "value1", "value2" };

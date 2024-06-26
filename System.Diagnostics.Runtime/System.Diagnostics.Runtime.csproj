@@ -5,15 +5,15 @@
     <Authors>Wei Peng</Authors>
     <Copyright>Copyright © 2024</Copyright>
     <Description>Exposes .NET runtime metrics (GC, JIT, lock contention, thread pool, exceptions).</Description>
-    <PackageId>PW.Diagnostics.Runtime</PackageId>
+    <AssemblyName>PW.Diagnostics.Runtime</AssemblyName>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>opentelemetry metrics prometheus counter guage</PackageTags>
     <RepositoryUrl>https://github.com/pengweiqhca/System.Diagnostics.Runtime</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <TargetFrameworks>net7.0;net6.0;net471</TargetFrameworks>
+    <TargetFrameworks>net8.0;net471</TargetFrameworks>
     <SignAssembly>True</SignAssembly>
-    <Version>1.6.0</Version>
+    <Version>2.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,13 +24,14 @@
     <None Include="../README.md" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' != 'net7.0'">
-    <PackageReference Include="PolySharp" Version="1.*" PrivateAssets="All" />
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="7.0.0" />
+  <ItemGroup>
+    <PackageReference Include="OpenTelemetry.Instrumentation.Process" Version="0.*-*" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="$(OpenTelemetryVersion)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
-    <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.1.7" />
+    <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.1.12" />
+    <PackageReference Include="PolySharp" Version="1.*" PrivateAssets="All" />
 
     <Reference Include="System.Net.Http" />
   </ItemGroup>

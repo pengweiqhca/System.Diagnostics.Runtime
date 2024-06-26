@@ -72,16 +72,10 @@ public sealed class Cache<TKey, TValue> : IDisposable where TKey : notnull where
         return false;
     }
 
-    private struct CacheValue<T>
+    private struct CacheValue<T>(T value, DateTime? timeStamp)
     {
-        public CacheValue(T value, DateTime? timeStamp)
-        {
-            Value = value;
-            TimeStamp = timeStamp ?? DateTime.UtcNow;
-        }
-
-        public DateTime TimeStamp { get; }
-        public T Value { get; }
+        public DateTime TimeStamp { get; } = timeStamp ?? DateTime.UtcNow;
+        public T Value { get; } = value;
     }
 
     public void Dispose()

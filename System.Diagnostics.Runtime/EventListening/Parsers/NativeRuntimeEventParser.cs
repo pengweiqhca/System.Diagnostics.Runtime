@@ -5,8 +5,7 @@ using System.Diagnostics.Tracing;
 
 namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
-public class NativeRuntimeEventParser : IEventParser<NativeRuntimeEventParser>,
-    NativeEvent.INativeEvent
+public class NativeRuntimeEventParser : NativeEvent.INativeEvent, IEventListener
 {
     // flags representing the "Garbage Collection" + "Preparation for garbage collection" pause reasons
     private const uint SuspendGcReasons = 0x1 | 0x6;
@@ -18,13 +17,13 @@ public class NativeRuntimeEventParser : IEventParser<NativeRuntimeEventParser>,
 
     private readonly EventPairTimer<uint, GcData> _gcEventTimer = new(
         NativeRuntimeEventSource.EventId.GcStart,
-        NativeRuntimeEventSource.EventId.GcStop,
+        NativeRuntimeEventSource.EventId.GcEnd,
         x => (uint)x.Payload![0]!,
         x => new((uint)x.Payload![1]!, (NativeRuntimeEventSource.GCType)x.Payload![3]!));
 
     private readonly EventPairTimer<int> _gcPauseEventTimer = new(
-        NativeRuntimeEventSource.EventId.SuspendEEStart,
-        NativeRuntimeEventSource.EventId.RestartEEStop,
+        NativeRuntimeEventSource.EventId.SuspendEE,
+        NativeRuntimeEventSource.EventId.RestartEEEnd,
         // Suspensions/ Resumptions are always done sequentially so there is no common value to match events on. Return a constant value as the event id.
         _ => 1);
 
@@ -35,19 +34,13 @@ public class NativeRuntimeEventParser : IEventParser<NativeRuntimeEventParser>,
     public event Action<NativeEvent.CollectionCompleteEvent>? CollectionComplete;
     public event Action<NativeEvent.AllocationTickEvent>? AllocationTick;
     public event Action<NativeEvent.ThreadPoolAdjustedReasonEvent>? ThreadPoolAdjusted;
-#if !NET7_0_OR_GREATER
-    public event Action<NativeEvent.ThreadPoolAdjustedEvent>? IoThreadPoolAdjusted;
-#endif
-    public event Action<NativeEvent.ThreadPoolAdjustedEvent>? WorkerThreadPoolAdjusted;
 
     public string EventSourceName => NativeRuntimeEventSource.Name;
 
     public EventKeywords Keywords => (EventKeywords)(
         NativeRuntimeEventSource.Keywords.Contention | // thread contention timing
-        NativeRuntimeEventSource.Keywords.Exception | // get the first chance
         NativeRuntimeEventSource.Keywords.GC | // garbage collector details
-        NativeRuntimeEventSource.Keywords.Threading | // threadpool events
-        NativeRuntimeEventSource.Keywords.Type); // for finalizer and exceptions type names
+        NativeRuntimeEventSource.Keywords.Threading); // threadpool events
 
     public void ProcessEvent(EventWrittenEventArgs e)
     {
@@ -75,11 +68,11 @@ public class NativeRuntimeEventParser : IEventParser<NativeRuntimeEventParser>,
 
                 return;
             }
-            case NativeRuntimeEventSource.EventId.SuspendEEStart:
-            case NativeRuntimeEventSource.EventId.RestartEEStop:
+            case NativeRuntimeEventSource.EventId.SuspendEE:
+            case NativeRuntimeEventSource.EventId.RestartEEEnd:
             {
                 // Execution engine is pausing for a reason other than GC, discard event.
-                if ((e.EventId != NativeRuntimeEventSource.EventId.SuspendEEStart ||
+                if ((e.EventId != NativeRuntimeEventSource.EventId.SuspendEE ||
                         ((uint)e.Payload![0]! & SuspendGcReasons) != 0) &&
                     _gcPauseEventTimer.TryGetDuration(e, out var pauseDuration) == DurationResult.FinalWithDuration &&
                     pauseDuration > TimeSpan.Zero)
@@ -87,12 +80,11 @@ public class NativeRuntimeEventParser : IEventParser<NativeRuntimeEventParser>,
 
                 return;
             }
-            case NativeRuntimeEventSource.EventId.GcStart or NativeRuntimeEventSource.EventId.GcStop:
+            case NativeRuntimeEventSource.EventId.GcStart or NativeRuntimeEventSource.EventId.GcEnd:
                 switch (_gcEventTimer.TryGetDuration(e, out var gcDuration, out var gcData))
                 {
                     case DurationResult.Start:
-                        CollectionStart?.Invoke(new((uint)e.Payload![0]!, (uint)e.Payload![1]!,
-                            (NativeRuntimeEventSource.GCReason)e.Payload![2]!));
+                        CollectionStart?.Invoke(new((NativeRuntimeEventSource.GCReason)e.Payload![2]!));
 
                         break;
                     case DurationResult.FinalWithDuration when gcDuration > TimeSpan.Zero:
@@ -105,19 +97,6 @@ public class NativeRuntimeEventParser : IEventParser<NativeRuntimeEventParser>,
                 ThreadPoolAdjusted?.Invoke(new((uint)e.Payload![1]!,
                     (NativeRuntimeEventSource.ThreadAdjustmentReason)e.Payload![2]!));
 
-                return;
-#if !NET7_0_OR_GREATER
-            case NativeRuntimeEventSource.EventId.IoThreadCreate or NativeRuntimeEventSource.EventId.IoThreadRetire
-                or NativeRuntimeEventSource.EventId.IoThreadUnretire
-                or NativeRuntimeEventSource.EventId.IoThreadTerminate:
-                IoThreadPoolAdjusted?.Invoke(new((uint)e.Payload![0]!, (uint)e.Payload![1]!));
-                return;
-#endif
-            case NativeRuntimeEventSource.EventId.WorkerThreadStart or NativeRuntimeEventSource.EventId.WorkerThreadStop
-                or NativeRuntimeEventSource.EventId.WorkerThreadRetirementStart
-                or NativeRuntimeEventSource.EventId.WorkerThreadRetirementStop
-                or NativeRuntimeEventSource.EventId.WorkerThreadWait:
-                WorkerThreadPoolAdjusted?.Invoke(new((uint)e.Payload![0]!, (uint)e.Payload![1]!));
                 return;
         }
     }

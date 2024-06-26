@@ -13,6 +13,8 @@
     <NoWarn>1591</NoWarn>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+
+    <OpenTelemetryVersion>1.9.*</OpenTelemetryVersion>
   </PropertyGroup>
 
   <ItemGroup>

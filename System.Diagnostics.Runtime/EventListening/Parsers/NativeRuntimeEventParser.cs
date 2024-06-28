@@ -15,12 +15,6 @@ public class NativeRuntimeEventParser : NativeEvent.INativeEvent, IEventListener
         NativeRuntimeEventSource.EventId.ContentionStop,
         x => x.OSThreadId);
 
-    private readonly EventPairTimer<uint, GcData> _gcEventTimer = new(
-        NativeRuntimeEventSource.EventId.GcStart,
-        NativeRuntimeEventSource.EventId.GcEnd,
-        x => (uint)x.Payload![0]!,
-        x => new((uint)x.Payload![1]!, (NativeRuntimeEventSource.GCType)x.Payload![3]!));
-
     private readonly EventPairTimer<int> _gcPauseEventTimer = new(
         NativeRuntimeEventSource.EventId.SuspendEE,
         NativeRuntimeEventSource.EventId.RestartEEEnd,
@@ -31,7 +25,6 @@ public class NativeRuntimeEventParser : NativeEvent.INativeEvent, IEventListener
     public event Action<NativeEvent.HeapStatsEvent>? HeapStats;
     public event Action<NativeEvent.PauseCompleteEvent>? PauseComplete;
     public event Action<NativeEvent.CollectionStartEvent>? CollectionStart;
-    public event Action<NativeEvent.CollectionCompleteEvent>? CollectionComplete;
     public event Action<NativeEvent.AllocationTickEvent>? AllocationTick;
     public event Action<NativeEvent.ThreadPoolAdjustedReasonEvent>? ThreadPoolAdjusted;
 
@@ -80,17 +73,10 @@ public class NativeRuntimeEventParser : NativeEvent.INativeEvent, IEventListener
 
                 return;
             }
-            case NativeRuntimeEventSource.EventId.GcStart or NativeRuntimeEventSource.EventId.GcEnd:
-                switch (_gcEventTimer.TryGetDuration(e, out var gcDuration, out var gcData))
-                {
-                    case DurationResult.Start:
-                        CollectionStart?.Invoke(new((NativeRuntimeEventSource.GCReason)e.Payload![2]!));
-
-                        break;
-                    case DurationResult.FinalWithDuration when gcDuration > TimeSpan.Zero:
-                        CollectionComplete?.Invoke(new(gcData.Generation, gcData.Type, gcDuration));
-                        break;
-                }
+            case NativeRuntimeEventSource.EventId.GcStart:
+                CollectionStart?.Invoke(new((uint)e.Payload![1]!,
+                    (NativeRuntimeEventSource.GCReason)e.Payload![2]!,
+                    (NativeRuntimeEventSource.GCType)e.Payload![3]!));
 
                 return;
             case NativeRuntimeEventSource.EventId.ThreadPoolAdjustment:
@@ -99,13 +85,6 @@ public class NativeRuntimeEventParser : NativeEvent.INativeEvent, IEventListener
 
                 return;
         }
-    }
-
-    private struct GcData(uint generation, NativeRuntimeEventSource.GCType type)
-    {
-        public uint Generation { get; } = generation;
-
-        public NativeRuntimeEventSource.GCType Type { get; } = type;
     }
 }
 #endif

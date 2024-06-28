@@ -10,31 +10,6 @@ internal class Given_Are_Available_For_GcStats : IntegrationTestBase
     public Task Computer_memory_available() =>
         InstrumentTest.Assert(measurements => Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.available_memory.size"),
             Is.GreaterThan(0.0).After(2000, 10)), $"{Options.MetricPrefix}gc.available_memory.size");
-
-    [Test]
-    public Task When_a_garbage_collection_is_performed_then_the_heap_sizes_are_updated() =>
-        InstrumentTest.Assert(() =>
-        {
-            var array = new byte[1_000_000];
-
-            array = null;
-
-            GC.Collect(2, GCCollectionMode.Forced, true, true);
-        }, measurements =>
-        {
-            Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.objects.size"),
-                Is.GreaterThan(0.0).After(2000, 10));
-            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "generation", "gen0"),
-                Is.GreaterThan(0).After(2000, 10));
-            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "generation", "gen1"),
-                Is.GreaterThan(0).After(2000, 10));
-            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "generation", "gen2"),
-                Is.GreaterThan(0).After(5000, 10));
-            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "generation", "loh"),
-                Is.GreaterThan(0).After(5000, 10));
-            Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "generation", "poh"),
-                Is.GreaterThan(0).After(5000, 10));
-        }, $"{Options.MetricPrefix}gc.heap.size", $"{Options.MetricPrefix}gc.objects.size");
 #else
     [Test]
     public Task When_a_garbage_collection_is_performed_then_the_heap_sizes_are_updated() =>
@@ -87,6 +62,7 @@ internal class Given_Native_Runtime_Are_Available_For_GcStats : IntegrationTestB
                 }
             }, measurements =>
             {
+#if NETFRAMEWORK
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "generation", "gen0"),
                     Is.GreaterThan(0).After(5000, 10));
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "generation", "gen1"),
@@ -95,13 +71,14 @@ internal class Given_Native_Runtime_Are_Available_For_GcStats : IntegrationTestB
                     Is.GreaterThan(0).After(5000, 10));
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "generation", "loh"),
                     Is.GreaterThan(0).After(5000, 10));
-#if NET
-                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.heap.size", "generation", "poh"),
-                    Is.GreaterThan(0).After(2000, 10));
 #endif
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.pinned.objects"),
                     Is.GreaterThan(0).After(5000, 10));
+#if NETFRAMEWORK
             }, $"{Options.MetricPrefix}gc.heap.size",
+#else
+            },
+#endif
             $"{Options.MetricPrefix}gc.pinned.objects");
 
     [Test]
@@ -161,11 +138,11 @@ internal class Given_Native_Runtime_Are_Available_For_GcStats : IntegrationTestB
                 GC.Collect(2, GCCollectionMode.Forced, true, true);
             }, measurements =>
             {
-                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.collections.duration"), Is.GreaterThan(0).After(5000, 10)); // at least 3 generations
+                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.duration"), Is.GreaterThan(0).After(5000, 10)); // at least 3 generations
                 Assert.That(() => measurements.Values($"{Options.MetricPrefix}gc.collections.duration"), Is.All.GreaterThan(0));
                 Assert.That(() => measurements.Values($"{Options.MetricPrefix}gc.reasons.count"), Is.All.GreaterThan(0));
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.pause.duration"), Is.GreaterThan(0).After(5000, 10));
-            }, $"{Options.MetricPrefix}gc.collections.duration",
+            }, $"{Options.MetricPrefix}gc.duration",
             $"{Options.MetricPrefix}gc.reasons.count",
             $"{Options.MetricPrefix}gc.pause.duration");
 

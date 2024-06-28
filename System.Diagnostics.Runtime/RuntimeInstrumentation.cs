@@ -176,29 +176,32 @@ internal class RuntimeInstrumentation : IDisposable
             "bytes", "The total available memory, in bytes, for the garbage collector to use when the last garbage collection occurred.");
 #endif
         if (nativeEvent == null) return;
+#if NETFRAMEWORK
+        var gcDuration = 0L;
+        meter.CreateObservableCounter($"{options.MetricPrefix}gc.duration",
+            () => gcDuration == default ? [] : new[] { new Measurement<long>(Interlocked.Read(ref gcDuration) * 100) },
+            "ns", "The total amount of time paused in GC since the process start.");
 
-        var gcCollectionSeconds = meter.CreateHistogram<double>(
-            $"{options.MetricPrefix}gc.collections.duration", "ms",
-            "The amount of time spent running garbage collections");
+        nativeEvent.CollectionComplete += e => Interlocked.Add(ref gcDuration, e.Duration.Ticks);
+#endif
+        var gcPauseDuration = 0L;
+        meter.CreateObservableCounter($"{options.MetricPrefix}gc.pause.duration",
+            () => gcPauseDuration == default ? [] : new[] { new Measurement<long>(Interlocked.Read(ref gcPauseDuration) * 100) },
+            "ns", "The amount of time execution was paused for garbage collections");
 
-        nativeEvent.CollectionComplete += e =>
-        {
-            if (e.Generation >= 0 && e.Generation < GenNames.Length)
-                gcCollectionSeconds.Record(e.Duration.TotalMilliseconds,
-                    CreateTag(LabelGeneration, GenNames[e.Generation]),
-                    CreateTag(LabelType, GcTypeToLabels[e.Type]));
-        };
-
-        var gcPauseSeconds = meter.CreateHistogram<double>(
-            $"{options.MetricPrefix}gc.pause.duration", "ms",
-            "The amount of time execution was paused for garbage collections");
-
-        nativeEvent.PauseComplete += e => gcPauseSeconds.Record(e.PauseDuration.TotalMilliseconds);
+        nativeEvent.PauseComplete += e => Interlocked.Add(ref gcPauseDuration, e.PauseDuration.Ticks);
 
         var gcCollections = meter.CreateCounter<int>($"{options.MetricPrefix}gc.reasons.count",
             description: "Count the number of garbage collection reasons that have occurred since the observation started. The value will be unavailable until GC has been collection after System.Diagnostics.Runtime initialization.");
 
-        nativeEvent.CollectionStart += e => gcCollections.Add(1, CreateTag(LabelReason, GcReasonToLabels[e.Reason]));
+        nativeEvent.CollectionStart += e =>
+        {
+            if (e.Generation >= 0 && e.Generation < GenNames.Length)
+                gcCollections.Add(1,
+                    CreateTag(LabelGeneration, GenNames[e.Generation]),
+                    CreateTag(LabelReason, GcReasonToLabels[e.Reason]),
+                    CreateTag(LabelType, GcTypeToLabels[e.Type]));
+        };
 
         NativeEvent.HeapStatsEvent stats = default;
         nativeEvent.HeapStats += e => stats = e;

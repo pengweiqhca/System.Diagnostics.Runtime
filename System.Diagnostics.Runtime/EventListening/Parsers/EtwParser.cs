@@ -19,7 +19,7 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
     private readonly TraceEventSession _session;
     private readonly EventTimer<int> _contentionTimer = new();
     private readonly EventTimer<int> _gcPauseTimer = new();
-    private readonly EventTimer<int, NativeRuntimeEventSource.GCType> _gcTimer = new();
+    private readonly EventTimer<int> _gcTimer = new();
 
     public EtwParser(string etwSessionName)
     {
@@ -217,20 +217,21 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
     {
         if (data.ProcessID != ProcessId) return;
 
-        _gcTimer.Start(data.Count, (NativeRuntimeEventSource.GCType)data.Type, data.TimeStamp);
+        _gcTimer.Start(data.Count, data.TimeStamp);
 
         if (CollectionStart is { } func)
-            func(new((NativeRuntimeEventSource.GCReason)data.Reason));
+            func(new((uint)data.Depth, (NativeRuntimeEventSource.GCReason)data.Reason,
+                (NativeRuntimeEventSource.GCType)data.Type));
     }
 
     private void GCStop(GCEndTraceData data)
     {
         if (data.ProcessID != ProcessId) return;
 
-        if (_gcTimer.TryStop(data.Count, data.TimeStamp, out var duration, out var gcType) &&
+        if (_gcTimer.TryStop(data.Count, data.TimeStamp, out var duration) &&
             duration > TimeSpan.Zero &&
             CollectionComplete is { } func)
-            func(new((uint)data.Depth, gcType, duration));
+            func(new((uint)data.Depth, duration));
     }
 
     private void GCAllocationTick(GCAllocationTickTraceData data)

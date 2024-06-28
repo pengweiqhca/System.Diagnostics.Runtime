@@ -11,7 +11,9 @@ public static class NativeEvent
         event Action<HeapStatsEvent> HeapStats;
         event Action<PauseCompleteEvent> PauseComplete;
         event Action<CollectionStartEvent> CollectionStart;
+#if NETFRAMEWORK
         event Action<CollectionCompleteEvent> CollectionComplete;
+#endif
         event Action<AllocationTickEvent> AllocationTick;
         event Action<ThreadPoolAdjustedReasonEvent> ThreadPoolAdjusted;
 #if NETFRAMEWORK
@@ -70,15 +72,20 @@ public static class NativeEvent
 
     public record struct PauseCompleteEvent(TimeSpan PauseDuration);
 
-    public record struct CollectionStartEvent(NativeRuntimeEventSource.GCReason Reason);
+    public record struct CollectionStartEvent(
+        long Generation,
+        NativeRuntimeEventSource.GCReason Reason,
+        NativeRuntimeEventSource.GCType Type);
 
-    public record struct CollectionCompleteEvent(long Generation, NativeRuntimeEventSource.GCType Type, TimeSpan Duration);
+    public record struct CollectionCompleteEvent(long Generation, TimeSpan Duration);
 
     public record struct AllocationTickEvent(long AllocatedBytes, bool IsLargeObjectHeap);
 
     public record struct HeapFragmentationEvent(long FragmentedBytes);
 
-    public record struct ThreadPoolAdjustedReasonEvent(long NumThreads, NativeRuntimeEventSource.ThreadAdjustmentReason AdjustmentReason);
+    public record struct ThreadPoolAdjustedReasonEvent(
+        long NumThreads,
+        NativeRuntimeEventSource.ThreadAdjustmentReason AdjustmentReason);
 
     public record struct ThreadPoolAdjustedEvent(long ActiveNumThreads, long RetiredNumThreads);
 }

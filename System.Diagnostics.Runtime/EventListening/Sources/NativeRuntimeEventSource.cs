@@ -228,12 +228,14 @@ public class NativeRuntimeEventSource
     public static class EventId
     {
         public const int GcStart = 1;
-#if NETFRAMEWORK
         public const int GcEnd = 2;
-#endif
+#if NETFRAMEWORK
         public const int RestartEEEnd = 3;
+#endif
         public const int HeapStats = 4;
+#if NETFRAMEWORK
         public const int SuspendEE = 9;
+#endif
         public const int AllocTick = 10;
 #if NETFRAMEWORK
         public const int IoThreadCreate = 44;

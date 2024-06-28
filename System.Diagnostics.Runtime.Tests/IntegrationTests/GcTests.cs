@@ -139,12 +139,11 @@ internal class Given_Native_Runtime_Are_Available_For_GcStats : IntegrationTestB
             }, measurements =>
             {
                 Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.duration"), Is.GreaterThan(0).After(5000, 10)); // at least 3 generations
-                Assert.That(() => measurements.Values($"{Options.MetricPrefix}gc.collections.duration"), Is.All.GreaterThan(0));
                 Assert.That(() => measurements.Values($"{Options.MetricPrefix}gc.reasons.count"), Is.All.GreaterThan(0));
-                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.pause.duration"), Is.GreaterThan(0).After(5000, 10));
+                Assert.That(() => measurements.Sum($"{Options.MetricPrefix}gc.collections.duration"), Is.GreaterThan(0).After(5000, 10));
             }, $"{Options.MetricPrefix}gc.duration",
             $"{Options.MetricPrefix}gc.reasons.count",
-            $"{Options.MetricPrefix}gc.pause.duration");
+            $"{Options.MetricPrefix}gc.collections.duration");
 
     [Test]
     public Task When_100kb_of_small_objects_are_allocated_then_the_allocated_bytes_counter_is_increased() =>

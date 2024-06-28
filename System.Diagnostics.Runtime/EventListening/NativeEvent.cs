@@ -9,11 +9,11 @@ public static class NativeEvent
     {
         event Action<ContentionEndEvent> ContentionEnd;
         event Action<HeapStatsEvent> HeapStats;
-        event Action<PauseCompleteEvent> PauseComplete;
-        event Action<CollectionStartEvent> CollectionStart;
 #if NETFRAMEWORK
-        event Action<CollectionCompleteEvent> CollectionComplete;
+        event Action<PauseCompleteEvent> PauseComplete;
 #endif
+        event Action<CollectionStartEvent> CollectionStart;
+        event Action<CollectionCompleteEvent> CollectionComplete;
         event Action<AllocationTickEvent> AllocationTick;
         event Action<ThreadPoolAdjustedReasonEvent> ThreadPoolAdjusted;
 #if NETFRAMEWORK

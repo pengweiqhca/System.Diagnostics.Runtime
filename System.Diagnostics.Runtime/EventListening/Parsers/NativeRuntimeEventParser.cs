@@ -15,16 +15,15 @@ public class NativeRuntimeEventParser : NativeEvent.INativeEvent, IEventListener
         NativeRuntimeEventSource.EventId.ContentionStop,
         x => x.OSThreadId);
 
-    private readonly EventPairTimer<int> _gcPauseEventTimer = new(
-        NativeRuntimeEventSource.EventId.SuspendEE,
-        NativeRuntimeEventSource.EventId.RestartEEEnd,
-        // Suspensions/ Resumptions are always done sequentially so there is no common value to match events on. Return a constant value as the event id.
-        _ => 1);
+    private readonly EventPairTimer<uint> _gcEventTimer = new(
+        NativeRuntimeEventSource.EventId.GcStart,
+        NativeRuntimeEventSource.EventId.GcEnd,
+        x => (uint)x.Payload![0]!);
 
     public event Action<NativeEvent.ContentionEndEvent>? ContentionEnd;
     public event Action<NativeEvent.HeapStatsEvent>? HeapStats;
-    public event Action<NativeEvent.PauseCompleteEvent>? PauseComplete;
     public event Action<NativeEvent.CollectionStartEvent>? CollectionStart;
+    public event Action<NativeEvent.CollectionCompleteEvent>? CollectionComplete;
     public event Action<NativeEvent.AllocationTickEvent>? AllocationTick;
     public event Action<NativeEvent.ThreadPoolAdjustedReasonEvent>? ThreadPoolAdjusted;
 
@@ -61,22 +60,17 @@ public class NativeRuntimeEventParser : NativeEvent.INativeEvent, IEventListener
 
                 return;
             }
-            case NativeRuntimeEventSource.EventId.SuspendEE:
-            case NativeRuntimeEventSource.EventId.RestartEEEnd:
-            {
-                // Execution engine is pausing for a reason other than GC, discard event.
-                if ((e.EventId != NativeRuntimeEventSource.EventId.SuspendEE ||
-                        ((uint)e.Payload![0]! & SuspendGcReasons) != 0) &&
-                    _gcPauseEventTimer.TryGetDuration(e, out var pauseDuration) == DurationResult.FinalWithDuration &&
-                    pauseDuration > TimeSpan.Zero)
-                    PauseComplete?.Invoke(new(pauseDuration));
+            case NativeRuntimeEventSource.EventId.GcStart or NativeRuntimeEventSource.EventId.GcEnd:
+                switch (_gcEventTimer.TryGetDuration(e, out var gcDuration, out var gcData))
+                {
+                    case DurationResult.Start:
+                        CollectionStart?.Invoke(new((uint)e.Payload![1]!, (NativeRuntimeEventSource.GCReason)e.Payload![2]!, (NativeRuntimeEventSource.GCType)e.Payload![3]!));
 
-                return;
-            }
-            case NativeRuntimeEventSource.EventId.GcStart:
-                CollectionStart?.Invoke(new((uint)e.Payload![1]!,
-                    (NativeRuntimeEventSource.GCReason)e.Payload![2]!,
-                    (NativeRuntimeEventSource.GCType)e.Payload![3]!));
+                        break;
+                    case DurationResult.FinalWithDuration when gcDuration > TimeSpan.Zero:
+                        CollectionComplete?.Invoke(new((uint)e.Payload![1]!, gcDuration));
+                        break;
+                }
 
                 return;
             case NativeRuntimeEventSource.EventId.ThreadPoolAdjustment:

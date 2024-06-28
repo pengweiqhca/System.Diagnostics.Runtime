@@ -177,19 +177,19 @@ internal class RuntimeInstrumentation : IDisposable
 #endif
         if (nativeEvent == null) return;
 #if NETFRAMEWORK
-        var gcDuration = 0L;
-        meter.CreateObservableCounter($"{options.MetricPrefix}gc.duration",
-            () => gcDuration == default ? [] : new[] { new Measurement<long>(Interlocked.Read(ref gcDuration) * 100) },
-            "ns", "The total amount of time paused in GC since the process start.");
-
-        nativeEvent.CollectionComplete += e => Interlocked.Add(ref gcDuration, e.Duration.Ticks);
-#endif
         var gcPauseDuration = 0L;
-        meter.CreateObservableCounter($"{options.MetricPrefix}gc.pause.duration",
+        meter.CreateObservableCounter($"{options.MetricPrefix}gc.duration",
             () => gcPauseDuration == default ? [] : new[] { new Measurement<long>(Interlocked.Read(ref gcPauseDuration) * 100) },
-            "ns", "The amount of time execution was paused for garbage collections");
+            "ns", "The total amount of time paused in GC since the observation start.");
 
         nativeEvent.PauseComplete += e => Interlocked.Add(ref gcPauseDuration, e.PauseDuration.Ticks);
+#endif
+        var gcDuration = 0L;
+        meter.CreateObservableCounter($"{options.MetricPrefix}gc.collections.duration",
+            () => gcDuration == default ? [] : new[] { new Measurement<long>(Interlocked.Read(ref gcDuration) * 100) },
+            "ns", "The total amount of time collected in GC since the observation start.");
+
+        nativeEvent.CollectionComplete += e => Interlocked.Add(ref gcDuration, e.Duration.Ticks);
 
         var gcCollections = meter.CreateCounter<int>($"{options.MetricPrefix}gc.reasons.count",
             description: "Count the number of garbage collection reasons that have occurred since the observation started. The value will be unavailable until GC has been collection after System.Diagnostics.Runtime initialization.");

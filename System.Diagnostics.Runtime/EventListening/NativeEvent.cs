@@ -15,16 +15,14 @@ public static class NativeEvent
         event Action<CollectionStartEvent> CollectionStart;
         event Action<CollectionCompleteEvent> CollectionComplete;
         event Action<AllocationTickEvent> AllocationTick;
+#if NETFRAMEWORK
+        event Action<HeapFragmentationEvent> HeapFragmentation;
+#endif
         event Action<ThreadPoolAdjustedReasonEvent> ThreadPoolAdjusted;
 #if NETFRAMEWORK
         event Action<ThreadPoolAdjustedEvent> IoThreadPoolAdjusted;
         event Action<ThreadPoolAdjustedEvent> WorkerThreadPoolAdjusted;
 #endif
-    }
-
-    public interface IExtendNativeEvent : INativeEvent
-    {
-        event Action<HeapFragmentationEvent> HeapFragmentation;
     }
 
     public record struct ContentionEndEvent(TimeSpan ContentionDuration);
@@ -81,7 +79,7 @@ public static class NativeEvent
 
     public record struct AllocationTickEvent(long AllocatedBytes, bool IsLargeObjectHeap);
 
-    public record struct HeapFragmentationEvent(long FragmentedBytes);
+    public record struct HeapFragmentationEvent(long[] FragmentedBytes);
 
     public record struct ThreadPoolAdjustedReasonEvent(
         long NumThreads,

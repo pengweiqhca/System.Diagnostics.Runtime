@@ -10,7 +10,7 @@ namespace System.Diagnostics.Runtime.EventListening.Parsers;
 
 //https://github.com/microsoft/perfview/blob/main/documentation/TraceEvent/TraceEventProgrammersGuide.md
 //https://labs.criteo.com/2018/07/grab-etw-session-providers-and-events/
-public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
+public class EtwParser : IDisposable, NativeEvent.INativeEvent
 {
     // flags representing the "Garbage Collection" + "Preparation for garbage collection" pause reasons
     private const GCSuspendEEReason SuspendGcReasons = GCSuspendEEReason.SuspendForGC | GCSuspendEEReason.SuspendForGCPrep;
@@ -242,16 +242,16 @@ public class EtwParser : IDisposable, NativeEvent.IExtendNativeEvent
             func(new((uint)data.AllocationAmount, data.AllocationKind == GCAllocationKind.Large));
     }
 
+    private readonly long[] _fragmentedBytes = new long[(int)Gens.GenPinObj];
+
     private void GCPerHeapHistory(GCPerHeapHistoryTraceData data)
     {
         if (data.ProcessID != ProcessId || !data.VersionRecognized) return;
 
-        var fragmentedBytes = 0L;
-
         for (var genNumber = Gens.Gen0; genNumber < Gens.GenPinObj; genNumber++)
-            fragmentedBytes += data.GenData(genNumber).Fragmentation;
+            _fragmentedBytes[(int)genNumber] = data.GenData(genNumber).Fragmentation;
 
-        if (HeapFragmentation is { } func) func(new(fragmentedBytes));
+        if (HeapFragmentation is { } func) func(new(_fragmentedBytes));
     }
 
     private void ThreadPoolWorkerThreadAdjustment(ThreadPoolWorkerThreadAdjustmentTraceData data)

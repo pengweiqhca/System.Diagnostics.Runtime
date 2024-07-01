@@ -137,8 +137,7 @@ internal class RuntimeInstrumentation : IDisposable
 
     private static IDisposable ExceptionsInstrumentation(Meter meter, RuntimeMetricsOptions options)
     {
-        var exceptionTypesCounter = meter.CreateCounter<long>(
-            $"{options.MetricPrefix}exception_types.count",
+        var exceptionTypesCounter = meter.CreateCounter<long>($"{options.MetricPrefix}exception_types.count",
             description: "Count of exception types that have been thrown in managed code, since the observation started. The value will be unavailable until an exception has been thrown after System.Diagnostics.Runtime initialization.");
 
         // ReSharper disable once ConvertToLocalFunction
@@ -164,16 +163,12 @@ internal class RuntimeInstrumentation : IDisposable
     }
 
     private static void GcInstrumentation(Meter meter, RuntimeMetricsOptions options,
-#if NET
         NativeEvent.INativeEvent? nativeEvent)
-#else
-        NativeEvent.IExtendNativeEvent? nativeEvent)
-#endif
     {
 #if NET
         meter.CreateObservableUpDownCounter($"{options.MetricPrefix}gc.available_memory.size",
-            () => GC.GetGCMemoryInfo().TotalAvailableMemoryBytes,
-            "bytes", "The total available memory, in bytes, for the garbage collector to use when the last garbage collection occurred.");
+            () => GC.GetGCMemoryInfo().TotalAvailableMemoryBytes, "bytes",
+            "The total available memory, in bytes, for the garbage collector to use when the last garbage collection occurred.");
 #endif
         if (nativeEvent == null) return;
 #if NETFRAMEWORK
@@ -224,31 +219,37 @@ internal class RuntimeInstrumentation : IDisposable
             () => stats == default ? [] : new[] { new Measurement<long>(stats.FinalizationQueueLength) },
             description: "The number of objects waiting to be finalized");
 #if NETFRAMEWORK
-        var fragmentedBytes = -1L;
+        long[] fragmentedBytes = [];
 
-        nativeEvent.HeapFragmentation += e =>
-        {
-            if (fragmentedBytes >= 0 || e.FragmentedBytes > 0)
-                fragmentedBytes = e.FragmentedBytes;
-        };
+        nativeEvent.HeapFragmentation += e => fragmentedBytes = e.FragmentedBytes;
 
-        meter.CreateObservableGauge($"{options.MetricPrefix}gc.heap.fragmentation.size", () =>
-                GetFragmentation(fragmentedBytes, stats.Gen0SizeBytes + stats.Gen1SizeBytes + stats.Gen2SizeBytes + stats.LohSizeBytes),
-            description: "The heap fragmentation, as observed during the latest garbage collection. The value will be unavailable until at least one garbage collection has occurred.");
+        meter.CreateObservableUpDownCounter($"{options.MetricPrefix}gc.heap.fragmentation.size", () =>
+            {
+                var measurements = new Measurement<long>[fragmentedBytes.Length];
+                var maxSupportedLength = Math.Min(measurements.Length, GenNames.Length);
+
+                for (var index = 0; index < maxSupportedLength; ++index)
+                    measurements[index] = new(fragmentedBytes[index],
+                        new KeyValuePair<string, object?>("generation", GenNames[index]));
+
+                return measurements;
+            }, "bytes",
+            "The heap fragmentation, as observed during the latest garbage collection. The value will be unavailable until at least one garbage collection has occurred.");
 #endif
         var loh = 0L;
         var soh = 0L;
 
         meter.CreateObservableCounter($"{options.MetricPrefix}gc.heap_allocations.size", () =>
-        {
-            var list=  new List<Measurement<long>>();
+            {
+                var list = new List<Measurement<long>>();
 
-            if (loh > 0) list.Add(new(loh, CreateTag(LabelHeap, "loh")));
+                if (loh > 0) list.Add(new(loh, CreateTag(LabelHeap, "loh")));
 
-            if (soh > 0) list.Add(new(soh, CreateTag(LabelHeap, "soh")));
+                if (soh > 0) list.Add(new(soh, CreateTag(LabelHeap, "soh")));
 
-            return list;
-        }, "bytes", "Count of bytes allocated on the managed GC heap since the observation started. .NET objects are allocated from this heap. Object allocations from unmanaged languages such as C/C++ do not use this heap.");
+                return list;
+            }, "bytes",
+            "Count of bytes allocated on the managed GC heap since the observation started. .NET objects are allocated from this heap. Object allocations from unmanaged languages such as C/C++ do not use this heap.");
 
         nativeEvent.AllocationTick += e => Interlocked.Add(ref e.IsLargeObjectHeap ? ref loh : ref soh,
             e.AllocatedBytes);
@@ -267,7 +268,8 @@ internal class RuntimeInstrumentation : IDisposable
                 : new(ProcessTimes.GetCpuUsage),
             description: "CPU utilization");
 
-        meter.CreateObservableUpDownCounter("process.handle.count", () => Process.GetCurrentProcess().HandleCount, description: "Process handle count");
+        meter.CreateObservableUpDownCounter("process.handle.count",
+            () => Process.GetCurrentProcess().HandleCount, description: "Process handle count");
     }
 
     private static void ThreadingInstrumentation(Meter meter, RuntimeMetricsOptions options,
@@ -301,8 +303,7 @@ internal class RuntimeInstrumentation : IDisposable
         if (nativeEvent == null) return;
 
         var adjustmentsTotal = meter.CreateCounter<int>($"{options.MetricPrefix}thread_pool.adjustments.count",
-            description:
-            "The total number of changes made to the size of the thread pool, labeled by the reason for change");
+            description: "The total number of changes made to the size of the thread pool, labeled by the reason for change");
 #if NETFRAMEWORK
         var threadCount = -1;
 

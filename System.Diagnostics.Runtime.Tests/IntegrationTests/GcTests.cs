@@ -43,7 +43,7 @@ internal class Given_Native_Runtime_Are_Available_For_GcStats : IntegrationTestB
 
                 GC.Collect(0, GCCollectionMode.Forced);
             },
-            measurements => Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.heap.fragmentation.size"),
+            measurements => Assert.That(() => measurements.LastValue($"{Options.MetricPrefix}gc.heap.fragmentation.size", "generation", "gen0"),
                 Is.GreaterThan(0.0).After(10000, 100)), $"{Options.MetricPrefix}gc.heap.fragmentation.size");
 #endif
     [Test]

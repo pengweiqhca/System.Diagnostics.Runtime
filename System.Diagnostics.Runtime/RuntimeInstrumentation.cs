@@ -24,7 +24,7 @@ internal class RuntimeInstrumentation : IDisposable
     private static readonly Dictionary<NativeRuntimeEventSource.GCType, string> GcTypeToLabels = LabelGenerator.MapEnumToLabelValues<NativeRuntimeEventSource.GCType>();
     private static readonly Dictionary<NativeRuntimeEventSource.GCReason, string> GcReasonToLabels = LabelGenerator.MapEnumToLabelValues<NativeRuntimeEventSource.GCReason>();
 
-    private static readonly string[] GenNames = new[] { "gen0", "gen1", "gen2", "loh", "poh" };
+    private static readonly string[] GenNames = ["gen0", "gen1", "gen2", "loh", "poh"];
     private static readonly AssemblyName AssemblyName = typeof(RuntimeInstrumentation).Assembly.GetName();
     public static string InstrumentationName { get; } = AssemblyName.Name ?? "System.Diagnostics.Runtime";
     private static readonly string? InstrumentationVersion = AssemblyName.Version?.ToString();
